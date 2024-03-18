@@ -16,7 +16,8 @@ namespace WpfApp1;
 
 public class ImageProcessor
 {
-    private ContourDrawer contourDrawer = new (3, 3, new MCvScalar(0, 255, 0), LineType.Filled);
+    private ContourDrawer contourPointDrawer = new (3, new MCvScalar(0, 255, 0), LineType.Filled);
+    private ContourDrawer contourArrowDrawer = new (2, new MCvScalar(0, 0, 255), LineType.FourConnected);
 
     public Tuple<BitmapImage,BitmapImage> processImage(byte[] pngImage)
     {
@@ -39,8 +40,11 @@ public class ImageProcessor
         CvInvoke.DrawContours(resultingMat, contours, -1, new MCvScalar(255, 0 ,0));
 
         var contourList = new ContourList(contours, resultingMat.Width, resultingMat.Height);
-        contourDrawer.drawContourPoints(contourList, resultingMat);
-        contourDrawer.drawContourLinks(contourList, resultingMat);
+        contourList.removeOutliers();
+        contourPointDrawer.drawContourPoints(contourList, resultingMat, 3);
+        contourArrowDrawer.drawContourLinks(contourList, resultingMat, 0.12);
+        contourArrowDrawer.drawContourCalculationOrdering(contourList, resultingMat, 1);
+
 
         return Tuple.Create(BitmapToImageSource(image.ToBitmap()), matToImageSource(resultingMat));
         }
