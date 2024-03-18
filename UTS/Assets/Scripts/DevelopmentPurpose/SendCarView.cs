@@ -99,9 +99,11 @@ public class SendCarView : MonoBehaviour
         }
 
         try {
-            clientStreamWriter?.Write(cameraSceneBytesData.Length);
-            clientStreamWriter?.Write(cameraSceneBytesData);
-            clientStreamWriter?.Flush();
+            if (cameraSceneBytesData != null) {
+                clientStreamWriter?.Write(cameraSceneBytesData.Length);
+                clientStreamWriter?.Write(cameraSceneBytesData);
+                clientStreamWriter?.Flush();
+            }
         }
         catch (Exception e) when (e is IOException || e is ObjectDisposedException) {
             if (e.Message.Contains("Pipe is broken")) return;

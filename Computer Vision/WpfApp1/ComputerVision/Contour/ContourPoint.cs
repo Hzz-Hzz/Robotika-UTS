@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.IO;
+using System.Numerics;
 using Emgu.CV;
 using Emgu.CV.Util;
 
@@ -47,6 +48,7 @@ public class ContourPoint
     public double X => _x;
     public double Y => _y;
     public Point point => new Point((int)X, (int)Y);
+    public Vector2 vector2 => new Vector2((float) X, (float) Y);
 
 
     public bool isOutlier(double radiansThreshold) {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using Emgu.CV;
 using Emgu.CV.Util;
@@ -21,6 +22,7 @@ public class ContourList
     private List<ContourPoint> _contours;
     public List<ContourPoint> contours => _contours;
     public ILinkScoreCalculation linkScoreCalculation;
+    public double heightPerWidthAspectRatio => _sourceImageHeight / _sourceImageWidth;
 
     private int halfWidth => _sourceImageWidth / 2;
 
@@ -51,8 +53,13 @@ public class ContourList
         var urutan = 0;
         foreach (var contour in _contours) {
             ContourPoint? targetLink = contour;
+
+            var vectorSet = new SetOfNormalizedVector2(0.2);
+
             do {
                 if (visitedLinks.TryGetValue(targetLink, out _))
+                    break;
+                if (!validateNotTurningToOpositeDirection(targetLink, vectorSet))
                     break;
                 visitedLinks.Add(targetLink, targetLink);
                 targetLink.order = urutan;
@@ -63,19 +70,32 @@ public class ContourList
         }
     }
 
+    private bool validateNotTurningToOpositeDirection(ContourPoint targetLink, SetOfNormalizedVector2 vectorSet) {
+        Vector2? nextDirection = (targetLink.backwardLink != null)?
+            targetLink.vector2 - targetLink.backwardLink.vector2 : null;
+        if (nextDirection != null && vectorSet.checkIfConflicting(nextDirection.Value, 1.9))
+            return false;
+        if (nextDirection != null)
+            vectorSet.Add(nextDirection.Value);
+        return true;
+    }
+
+
     private ContourPoint? updateLink(ContourPoint toBeUpdated) {
         var closest = new Tuple<double, ContourPoint?>(Double.PositiveInfinity, null);
-        foreach (var contour in _contours) {
-            if (contour == toBeUpdated)
+        foreach (var nextLinkCandidate in _contours) {
+            if (nextLinkCandidate == toBeUpdated)
                 continue;
-            if (contour.link == toBeUpdated)
+            if (nextLinkCandidate.link == toBeUpdated)
                 continue;
-            if (contour.order != null)  // to make sure the graph will be acyclic graph
+            if (nextLinkCandidate.order != null)  // to make sure the graph will be acyclic graph
+                continue;
+            if (!linkScoreCalculation.isHardConstraintSatisfied(this, toBeUpdated, nextLinkCandidate))
                 continue;
 
-            var score = linkScoreCalculation.getScore(toBeUpdated, contour);
+            var score = linkScoreCalculation.getScore(toBeUpdated, nextLinkCandidate);
             if (score < closest.Item1) {
-                closest = new Tuple<double, ContourPoint?>(score, contour);
+                closest = new Tuple<double, ContourPoint?>(score, nextLinkCandidate);
             }
         }
         if (closest.Item2 == null)
@@ -86,7 +106,7 @@ public class ContourList
         return targetLink;
     }
 
-    public void removeOutliers(double radianThreshold = Math.PI/2) {  // 50 degree threshold
+    public void removeOutliers(double maximumRadianThreshold = Math.PI*2/9) {
         _contours.Sort((a, b) => {
             if (a.order == null || b.order == null)
                 return 0;
@@ -96,7 +116,7 @@ public class ContourList
         List<ContourPoint> toBeDeleted = new List<ContourPoint>();
         do {
             foreach (var contour in _contours) {
-                if (contour.isOutlier(radianThreshold)) {
+                if (contour.isOutlier(maximumRadianThreshold)) {
                     toBeDeleted.Add(contour);
                 }
             }
