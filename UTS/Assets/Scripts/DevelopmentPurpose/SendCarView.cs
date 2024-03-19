@@ -1,21 +1,21 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
 using System.Threading;
 using JetBrains.Annotations;
-using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using UnityEngine.Serialization;
 
 [InitializeOnLoad]
 public class SendCarView : MonoBehaviour
 {
+    public bool saveDataset = false;
+    public string datasetFolderPath;
+
+
     private Camera targetCameraGameobject;
     private System.Diagnostics.Stopwatch _stopwatch = new();
+    private System.Diagnostics.Stopwatch _saveDatasetStopwatch = new();
     private NamedPipeClientStream _clientNamedPipe;
     private StreamReader clientStreamReader;
     private BinaryWriter clientStreamWriter;
@@ -24,6 +24,7 @@ public class SendCarView : MonoBehaviour
     {
         targetCameraGameobject = GetComponent<Camera>();
         _stopwatch.Start();
+        _saveDatasetStopwatch.Start();
         reconnectNamedPipeAsync();
         EditorApplication.pauseStateChanged += HandleOnPlayModeChanged;
     }
@@ -67,7 +68,7 @@ public class SendCarView : MonoBehaviour
     }
     void UpdateContinously() {
         while (onPauseThreadShouldRun ?? false) {
-            sendSceneToServer();
+            sendSceneToServer(true);
             Thread.Sleep(100);
         }
         onPauseThreadShouldRun = null;
@@ -83,10 +84,12 @@ public class SendCarView : MonoBehaviour
         if (_stopwatch.ElapsedMilliseconds < 1000 / MaxFPS)
             return;
         _stopwatch.Restart();
-        sendSceneToServer();
+        sendSceneToServer(false);
+        if (Input.GetKeyDown("p"))
+            saveDataset = !saveDataset;
     }
 
-    void sendSceneToServer() {
+    void sendSceneToServer(bool isPaused) {
         if (clientStreamWriter == null)
             return;
         if (!_clientNamedPipe.IsConnected){
@@ -110,6 +113,8 @@ public class SendCarView : MonoBehaviour
                 clientStreamWriter?.Write(cameraSceneBytesData.Length);
                 clientStreamWriter?.Write(cameraSceneBytesData);
                 clientStreamWriter?.Flush();
+                if (!isPaused)
+                    saveDatasetTo(cameraSceneBytesData);
             }
         }
         catch (Exception e) when (e is IOException || e is ObjectDisposedException) {
@@ -117,6 +122,41 @@ public class SendCarView : MonoBehaviour
             if (e.Message.Contains("closed pipe")) return;
             throw;
         }
+    }
+
+    private void saveDatasetTo(byte[] byteData, [CanBeNull] string datasetFolderPath = null) {
+        const int MaxFPS = 2;
+        if (_saveDatasetStopwatch.ElapsedMilliseconds < 1000 / MaxFPS)
+            return;
+        _saveDatasetStopwatch.Restart();
+
+        datasetFolderPath = datasetFolderPath ?? this.datasetFolderPath;
+        if (!IsPathValidRootedLocal(this.datasetFolderPath)) {
+            Debug.LogError($"Invalid path datasetFolderPath, given: {datasetFolderPath}");
+            return;
+        }
+
+        if (!saveDataset) {
+            return;
+        }
+        Directory.CreateDirectory(datasetFolderPath);
+        var fileNumberLocation = Path.Join(datasetFolderPath, "-fileno");
+        int fileNumber = File.Exists(fileNumberLocation) ? Int32.Parse(File.ReadAllText(fileNumberLocation)) : 0;
+        var datasetFileName = Path.Join(datasetFolderPath, $"{fileNumber}.png");
+
+        Debug.Log($"Saving dataset {fileNumber}.png");
+        fileNumber++;
+        File.WriteAllText(fileNumberLocation, $"{fileNumber}");
+
+        using (var streamWriter = new FileStream(datasetFileName, FileMode.Create))
+        {
+            streamWriter.Write(byteData);
+        }
+    }
+    public bool IsPathValidRootedLocal(String pathString) {
+        Uri pathUri;
+        Boolean isValidUri = Uri.TryCreate(pathString, UriKind.Absolute, out pathUri);
+        return isValidUri && pathUri != null && pathUri.IsLoopback;
     }
 
 
