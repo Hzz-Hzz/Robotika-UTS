@@ -44,7 +44,7 @@ public class ContourList
             var contour = ContourPoint.fromVectorOfPoint(rawContours[i]);
             if (contour == null)
                 continue;
-            if (contour.area < 80)
+            if (contour.area < 40)
                 continue;
             _contours.Add(contour);
         }
@@ -62,7 +62,7 @@ public class ContourList
             if (visitedLinks.TryGetValue(targetLink, out _))
                 continue;
             numberOfPath++;
-            if (numberOfPath > 4)  // at most 2 paths
+            if (numberOfPath > 6)  // at most 2 paths
                 break;
 
             var vectorSet = new SetOfNormalizedVector2(0.2);
@@ -119,7 +119,7 @@ public class ContourList
         return targetLink;
     }
 
-    public void removeOutliers(double maximumRadianThreshold = Math.PI*2/9) {
+    public void removeOutliers(double radianThreshold = Math.PI*2/9) {
         _contours.Sort((a, b) => {
             if (a.order == null || b.order == null)
                 return 0;
@@ -129,7 +129,7 @@ public class ContourList
         List<ContourPoint> toBeDeleted = new List<ContourPoint>();
         do {
             foreach (var contour in _contours) {
-                if (contour.isOutlier(maximumRadianThreshold)) {
+                if (contour.isOutlier(radianThreshold)) {
                     toBeDeleted.Add(contour);
                 }
             }

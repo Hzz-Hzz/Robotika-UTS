@@ -37,8 +37,8 @@ public class ContourLinkBasedOnAreaAndDistance: ILinkScoreCalculation
         var horizontalPenalty2 = (int)(point.X);
         var verticalPenalty = (int)(contourList.sourceImageHeight - point.Y);
 
-        var positionPenalty = verticalPenalty * 2 * contourList.sourceImageWidth / contourList.sourceImageHeight
-                              + Math.Min(horizontalPenalty1, horizontalPenalty2);
+        var positionPenalty = verticalPenalty * 2 * contourList.sourceImageWidth / contourList.sourceImageHeight;
+                              // + Math.Min(horizontalPenalty1, horizontalPenalty2);
         var totalPenalty = positionPenalty / Math.Log(point.area / 80);
         return (int) positionPenalty;
     }

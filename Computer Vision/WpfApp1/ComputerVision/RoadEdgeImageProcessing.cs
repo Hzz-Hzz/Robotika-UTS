@@ -40,6 +40,7 @@ public class RoadEdgeImageProcessing
         var contourList = new ContourList(contours, resultingMat.Width, resultingMat.Height);
         contourList.boundariesNotToIntersectWith = _mainRoadImageProcessing.resultingPolygons;
         contourList.initializeContourLinks();
+        contourList.removeOutliers();
 
         contourPointDrawer.drawContourPoints(contourList, resultingMat, 3);
         contourArrowDrawer.drawContourLinks(contourList, resultingMat, 0.12);

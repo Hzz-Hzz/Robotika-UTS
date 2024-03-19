@@ -31,9 +31,11 @@ public class MainRoadImageProcessing
     public Mat processImage(GpuMat gpuMat)
     {
         using (var newGpuMat = filterByDistanceWithTargetColor(gpuMat, 130, 130, 130, 200))
-        using (var newGpuMat2 = filterByDistanceWithTargetColor(gpuMat, 205, 205, 205, 215))
+        using (var newGpuMat2 = filterByDistanceWithTargetColor(gpuMat, 205, 205, 205, 220))
+        using (var newGpuMat3 = filterByDistanceWithTargetColor(gpuMat, 50, 60, 70, 220))
         using (var resultingMat = new Mat()) {
             CudaInvoke.Max(newGpuMat, newGpuMat2, newGpuMat);
+            CudaInvoke.Max(newGpuMat, newGpuMat3, newGpuMat);
             newGpuMat.Download(resultingMat);
 
             return contourProcessor(resultingMat);
@@ -73,6 +75,7 @@ public class MainRoadImageProcessing
             CudaInvoke.CvtColor(ret, ret, ColorConversion.Bgr2Gray);
             CudaInvoke.Threshold(ret, ret, threshold, 255, ThresholdType.ToZero);
             applyErrosion(ret);
+            applyErrosion(ret);
             CudaInvoke.CvtColor(ret, ret, ColorConversion.Gray2Bgr);
         }
         return ret;
@@ -103,7 +106,7 @@ public class MainRoadImageProcessing
         var singleChannel = splittedChannel[0];
 
         var anchor = new System.Drawing.Point(-1, -1);  // Point(-1, -1) is a special value means the center
-        var kernelSize = new System.Drawing.Size(5, 5);
+        var kernelSize = new System.Drawing.Size(3, 3);
         var kernel = CvInvoke.GetStructuringElement(ElementShape.Rectangle, kernelSize, anchor);
 
         // open fitler is doing Erode, then Dilatation
