@@ -1,10 +1,14 @@
+using System;
+using System.ComponentModel;
+using System.Drawing;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace WpfApp1;
 
-public static class BitmapImagePixelUtility
+public static class BitmapImageUtility
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct PixelColor
@@ -45,5 +49,30 @@ public static class BitmapImagePixelUtility
                 Red   = pixelBytes[(y*width + x) * 4 + 2],
                 Alpha = pixelBytes[(y*width + x) * 4 + 3],
             };
+    }
+
+
+    public static BitmapImage BitmapToImageSource(Bitmap bitmap)
+    {
+        using (MemoryStream memory = new MemoryStream())
+        {
+            try
+            {
+                bitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Bmp);
+                memory.Position = 0;
+                BitmapImage bitmapimage = new BitmapImage();
+                bitmapimage.BeginInit();
+                bitmapimage.StreamSource = memory;
+                bitmapimage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapimage.EndInit();
+
+                return bitmapimage;
+            }
+            catch (AccessViolationException e)
+            {
+                throw new WarningException(e.Message, e);
+            }
+        }
+
     }
 }

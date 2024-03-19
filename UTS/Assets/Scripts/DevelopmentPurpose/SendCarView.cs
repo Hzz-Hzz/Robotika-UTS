@@ -52,34 +52,41 @@ public class SendCarView : MonoBehaviour
     }
 
 
-
-    private Thread _threadOnPause;
+    private bool? onPauseThreadShouldRun = null;
+    private Thread _onPauseThread;
     void HandleOnPlayModeChanged(PauseState pauseState) {
         // This allows us to restart the WPF application and having the image immediately displayed
         // without having to unpause then re-pause.
         if (pauseState == PauseState.Paused) {
-            _threadOnPause = new Thread(UpdateContinously);
-            _threadOnPause.Start();
-        } else if (pauseState == PauseState.Unpaused && _threadOnPause != null) {
-            _threadOnPause.Abort();
-            _threadOnPause = null;
+            onPauseThreadShouldRun = true;
+            _onPauseThread = new Thread(UpdateContinously);
+            _onPauseThread.Start();
+        } else if (pauseState == PauseState.Unpaused && _onPauseThread != null) {
+            onPauseThreadShouldRun = false;
         }
     }
     void UpdateContinously() {
-        while (true) {
-            Update();
+        while (onPauseThreadShouldRun ?? false) {
+            sendSceneToServer();
             Thread.Sleep(100);
         }
+        onPauseThreadShouldRun = null;
     }
 
 
     private Texture2D cameraTexture2D;
     private byte[] cameraSceneBytesData;
     void Update() {
+        if (onPauseThreadShouldRun != null)
+            return;
         const int MaxFPS = 10;
         if (_stopwatch.ElapsedMilliseconds < 1000 / MaxFPS)
             return;
         _stopwatch.Restart();
+        sendSceneToServer();
+    }
+
+    void sendSceneToServer() {
         if (clientStreamWriter == null)
             return;
         if (!_clientNamedPipe.IsConnected){
@@ -111,6 +118,7 @@ public class SendCarView : MonoBehaviour
             throw;
         }
     }
+
 
     Texture2D CamCapture()
     {

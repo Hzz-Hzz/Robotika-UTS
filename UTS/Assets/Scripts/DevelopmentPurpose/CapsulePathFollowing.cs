@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class CapsulePathFollowing : MonoBehaviour
 {
@@ -10,12 +11,14 @@ public class CapsulePathFollowing : MonoBehaviour
     private Transform[] paths;
     private int currentPath = 0;
     private int speed = 6;
+    private Vector3 pathLocationRandomizer;
 
     // Start is called before the first frame update
     void Start()
     {
         paths = targetPath.GetComponentsInChildren<Transform>();
         paths = paths.Where(x => x.transform != transform).ToArray();
+        updatePathLocationRandomizer();
     }
 
     // Update is called once per frame
@@ -53,7 +56,9 @@ public class CapsulePathFollowing : MonoBehaviour
 
     Vector3 targetPosition()
     {
-        return paths[currentPath].transform.position;
+        if (paths.Length == 0)
+            return Vector3.forward;
+        return paths[currentPath].transform.position + pathLocationRandomizer;
     }
 
     void updateTargetPosition()
@@ -62,5 +67,10 @@ public class CapsulePathFollowing : MonoBehaviour
             return;
         slerpTime = 0;
         currentPath = (currentPath + 1) % paths.Length;
+        updatePathLocationRandomizer();
+    }
+
+    void updatePathLocationRandomizer() {
+        pathLocationRandomizer = Random.insideUnitCircle.normalized * Random.value;
     }
 }

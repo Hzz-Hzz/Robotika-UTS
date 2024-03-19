@@ -41,18 +41,20 @@ namespace WpfApp1
 
         private void UIElement_OnMouseMove(object sender, MouseEventArgs e)
         {
-            var senderUiElement = sender as UIElement;
+            var senderUiElement = sender as Image;
             if (senderUiElement == null)
                 throw new Exception("Null UIElement UIElement_OnMouseMove");
             if (viewModel == null)
                 throw new Exception("Null viewModel UIElement_OnMouseMove");
             var coord = GetImageCoordsAt(e, senderUiElement);
-            var source = senderUiElement == originalImage? viewModel._imageSourceOriginal : viewModel._imageSource;
+            var source = senderUiElement.Source as BitmapImage;
+            if (source == null)
+                throw new Exception("Null source UIElement_OnMouseMove");
             var color = getImageColor(source, coord);
             colorInformation.Text = $"({coord.X}, {coord.Y}) --> RGB({color.Red}, {color.Green}, {color.Blue})";
         }
-        public BitmapImagePixelUtility.PixelColor getImageColor(BitmapImage img, Point point) {
-            return BitmapImagePixelUtility.GetPixels(img)[(int) point.X, (int) point.Y];
+        public BitmapImageUtility.PixelColor getImageColor(BitmapImage img, Point point) {
+            return BitmapImageUtility.GetPixels(img)[(int) point.X, (int) point.Y];
         }
 
         public Point GetImageCoordsAt(MouseEventArgs e, UIElement targetElement) {

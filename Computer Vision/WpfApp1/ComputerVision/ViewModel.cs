@@ -15,6 +15,7 @@ using System.Windows.Threading;
 using System.Xml.XPath;
 using Emgu.CV;
 using Emgu.CV.Cuda;
+using Emgu.CV.Structure;
 
 namespace WpfApp1;
 
@@ -25,17 +26,21 @@ public class ViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler PropertyChanged;
 
     public ImageSource imageSourceOriginal {
-        get { return _imageSourceOriginal; }
+        get { return ImageSourceOriginal; }
     }
 
-    public ImageSource imageSource {
-        get { return _imageSource; }
+    public ImageSource imageSourceRoadEdge {
+        get { return ImageSourceRoadEdge; }
+    }
+    public ImageSource imageSourceRoadMain {
+        get { return ImageSourceRoadMain; }
     }
 
     private BitmapImage ___imageSourceOriginal;
-    private BitmapImage ___imageSource;
+    private BitmapImage ___imageSourceRoadEdge;
+    private BitmapImage ___imageSourceRoadMain;
 
-    public BitmapImage _imageSourceOriginal {
+    public BitmapImage ImageSourceOriginal {
         get { return ___imageSourceOriginal; }
         set {
             ___imageSourceOriginal = value;
@@ -43,18 +48,26 @@ public class ViewModel : INotifyPropertyChanged
         }
     }
 
-    public BitmapImage _imageSource {
-        get { return ___imageSource; }
+    public BitmapImage ImageSourceRoadEdge {
+        get { return ___imageSourceRoadEdge; }
         set {
-            ___imageSource = value;
-            PropertyChanged(this, new PropertyChangedEventArgs("imageSource"));
+            ___imageSourceRoadEdge = value;
+            PropertyChanged(this, new PropertyChangedEventArgs("imageSourceRoadEdge"));
+        }
+    }
+    public BitmapImage ImageSourceRoadMain {
+        get { return ___imageSourceRoadMain; }
+        set {
+            ___imageSourceRoadMain = value;
+            PropertyChanged(this, new PropertyChangedEventArgs("imageSourceRoadMain"));
         }
     }
 
 
 
     public String status {get;set;}
-    private ImageProcessor _imageProcessor = new ImageProcessor();
+    private RoadEdgeImageProcessing _roadEdgeImageProcessing = new ();
+    private MainRoadImageProcessing _mainRoadImageProcessing = new ();
 
 
     public ViewModel()
@@ -92,15 +105,31 @@ public class ViewModel : INotifyPropertyChanged
                     // namedPipeServerStream.Read(sizeRaw);
                     var size = BitConverter.ToInt32(sizeRaw);
 
-                    var image = blockingReadExactly(reader, size, stoppingCriteria);
+                    var imageByte = blockingReadExactly(reader, size, stoppingCriteria);
+                    var image = ConvertByteToImage(imageByte);
+                    image = cropUpperPart(image, 30);
 
-                    var resultingTuple = _imageProcessor.processImage(image);
-                    var origImage = resultingTuple.Item1;
-                    var resultingImage = resultingTuple.Item2;
-                    origImage.Freeze();
-                    resultingImage.Freeze();
-                    _imageSourceOriginal = origImage;
-                    _imageSource = resultingImage;
+
+                    try {
+                        var origImage = BitmapImageUtility.BitmapToImageSource(image.ToBitmap());
+                        var resultingRoadEdgeImage = _roadEdgeImageProcessing.processImage(image);
+                        var resultingMainRoadImage = _mainRoadImageProcessing.processImage(image);
+
+
+                        origImage.Freeze();
+                        resultingRoadEdgeImage.Freeze();
+                        resultingMainRoadImage.Freeze();
+                        ImageSourceOriginal = origImage;
+                        ImageSourceRoadEdge = resultingRoadEdgeImage;
+                        ImageSourceRoadMain = resultingMainRoadImage;
+                    }
+                    catch (ArgumentException e) {
+                        if (e.Message.Contains("Parameter is not valid")) {
+                            Trace.TraceWarning(e.Message);
+                            return;
+                        }
+                        throw;
+                    }
                 }
             }
             catch (OperationCanceledException e)
@@ -113,6 +142,20 @@ public class ViewModel : INotifyPropertyChanged
                 namedPipeServerStream.Disconnect();
             }
         }
+    }
+
+    private Image<Bgr, byte> cropUpperPart(Image<Bgr, byte> originalImage, int percentage) {
+        var oldRoi = originalImage.ROI;
+        originalImage.ROI = new Rectangle(0, percentage * originalImage.Height / 100, originalImage.Width, originalImage.Height);
+        var ret = originalImage.Copy();
+        originalImage.ROI = oldRoi;
+        return ret;
+    }
+
+
+    public static Image<Bgr, byte> ConvertByteToImage(byte[] bytes)
+    {
+        return new Bitmap(Image.FromStream(new MemoryStream(bytes), true, true)).ToImage<Bgr, byte>();
     }
 
     private byte[] blockingReadExactly(BinaryReader streamReader, int bytesCount, Func<bool> stopFlag)

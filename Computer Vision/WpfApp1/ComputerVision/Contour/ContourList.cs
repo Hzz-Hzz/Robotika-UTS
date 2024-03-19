@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -42,6 +43,8 @@ public class ContourList
             var contour = ContourPoint.fromVectorOfPoint(rawContours[i]);
             if (contour == null)
                 continue;
+            if (contour.area < 80)
+                continue;
             _contours.Add(contour);
         }
         _contours.Sort((a, b) =>  linkScoreCalculation.nodePrioritySorter(this, a, b));
@@ -50,15 +53,19 @@ public class ContourList
     private void initializeContourLinks() {
         // This is just for a set. The value is unused
         var visitedLinks = new ConditionalWeakTable<ContourPoint, ContourPoint>();
+
         var urutan = 0;
+        var numberOfPath = 0;
         foreach (var contour in _contours) {
             ContourPoint? targetLink = contour;
+            if (visitedLinks.TryGetValue(targetLink, out _))
+                break;
+            numberOfPath++;
+            if (numberOfPath > 2)  // at most 2 paths
+                break;
 
             var vectorSet = new SetOfNormalizedVector2(0.2);
-
-            do {
-                if (visitedLinks.TryGetValue(targetLink, out _))
-                    break;
+            for (int i = 0; i < 7; i++) {  // the same path should have at most 7 nodes
                 if (!validateNotTurningToOpositeDirection(targetLink, vectorSet))
                     break;
                 visitedLinks.Add(targetLink, targetLink);
@@ -66,7 +73,9 @@ public class ContourList
 
                 targetLink = updateLink(targetLink);
                 urutan++;
-            } while (targetLink != null);
+                if (targetLink == null)
+                    break;
+            }
         }
     }
 

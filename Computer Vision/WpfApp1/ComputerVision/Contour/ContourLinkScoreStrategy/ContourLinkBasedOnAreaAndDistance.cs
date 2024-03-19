@@ -7,15 +7,14 @@ public class ContourLinkBasedOnAreaAndDistance: ILinkScoreCalculation
     public double getScore(ContourPoint toBeUpdated, ContourPoint target) {
         var biggerArea = Math.Max(toBeUpdated.area, target.area);
         var smallerArea = Math.Min(toBeUpdated.area, target.area);
-        var ratio = Math.Log(1 + biggerArea / smallerArea);  // the smaller the better
+        var ratio = Math.Log(2 + Math.Min(biggerArea / smallerArea, 3), 3);  // the smaller the better
 
-        var distance = toBeUpdated.distance(target, 1.0, 2);
+        var distance = toBeUpdated.distance(target, 1.0, 1.1);
         var anglePenalty = 1.0;
-        if (toBeUpdated.backwardLink != null) {  // prefer straight lines
-            var anglePercentage = ContourPoint.calculateAngle(toBeUpdated.backwardLink, toBeUpdated, target) / Math.PI;
-            anglePenalty = Math.Log(3 - anglePercentage, 2);
-            // anglePenalty = Math.Log(2 + anglePenalty, 2);
-        }
+        // if (toBeUpdated.backwardLink != null) {  // prefer straight lines
+            // var anglePercentage = ContourPoint.calculateAngle(toBeUpdated.backwardLink, toBeUpdated, target) / Math.PI;
+            // anglePenalty = Math.Log(3 - anglePercentage, 2);
+        // }
         return distance * ratio * anglePenalty;  // the smaller the better
     }
 
@@ -38,8 +37,10 @@ public class ContourLinkBasedOnAreaAndDistance: ILinkScoreCalculation
         var horizontalPenalty2 = (int)(point.X);
         var verticalPenalty = (int)(contourList.sourceImageHeight - point.Y);
 
-        return verticalPenalty * 2 * contourList.sourceImageWidth / contourList.sourceImageHeight
-               + Math.Min(horizontalPenalty1, horizontalPenalty2);
+        var positionPenalty = verticalPenalty * 2 * contourList.sourceImageWidth / contourList.sourceImageHeight
+                              + Math.Min(horizontalPenalty1, horizontalPenalty2);
+        var totalPenalty = positionPenalty / Math.Log(point.area / 80);
+        return (int) positionPenalty;
     }
 
 

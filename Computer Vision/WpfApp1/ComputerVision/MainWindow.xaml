@@ -17,12 +17,18 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
-        <UniformGrid >
-            <TextBlock Text="{Binding status}" />
-            <TextBlock Name="colorInformation" TextAlignment="Right"/>
-        </UniformGrid>
-        <Image Grid.Row="1" Name="processedImage" Source="{Binding imageSource}" MouseMove="UIElement_OnMouseMove"></Image>
+
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding status}" />
+        <TextBlock Grid.Row="0" Grid.Column="1" Name="colorInformation" TextAlignment="Right"/>
+        <Image Grid.Row="1" Name="processedImageRoadEdge" Source="{Binding imageSourceRoadEdge}" MouseMove="UIElement_OnMouseMove"></Image>
+        <Image Grid.Row="1" Grid.Column="2"
+               Name="processedImageRoadMain" Source="{Binding imageSourceRoadMain}" MouseMove="UIElement_OnMouseMove"></Image>
+
         <Image Grid.Row="2" Name="originalImage" Source="{Binding imageSourceOriginal}" MouseMove="UIElement_OnMouseMove" ></Image>
 
         <TextBlock Grid.Row="3" Text="{Binding status}">---</TextBlock>

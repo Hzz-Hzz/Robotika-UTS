@@ -14,17 +14,13 @@ using Point = System.Windows.Point;
 
 namespace WpfApp1;
 
-public class ImageProcessor
+public class RoadEdgeImageProcessing
 {
     private ContourDrawer contourPointDrawer = new (3, new MCvScalar(0, 255, 0), LineType.Filled);
     private ContourDrawer contourArrowDrawer = new (2, new MCvScalar(0, 0, 255), LineType.FourConnected);
 
-    public Tuple<BitmapImage,BitmapImage> processImage(byte[] pngImage)
+    public BitmapImage processImage(Image<Bgr, byte> image)
     {
-        var image = ConvertByteToImage(pngImage);
-        image = cropUpperPart(image, 30);
-
-
         using (var gpuMat = imageToGpuMat(image))
         using (var resultingMat = new Mat())
         {
@@ -40,13 +36,13 @@ public class ImageProcessor
         CvInvoke.DrawContours(resultingMat, contours, -1, new MCvScalar(255, 0 ,0));
 
         var contourList = new ContourList(contours, resultingMat.Width, resultingMat.Height);
-        contourList.removeOutliers();
+        // contourList.removeOutliers();
         contourPointDrawer.drawContourPoints(contourList, resultingMat, 3);
         contourArrowDrawer.drawContourLinks(contourList, resultingMat, 0.12);
         contourArrowDrawer.drawContourCalculationOrdering(contourList, resultingMat, 1);
 
 
-        return Tuple.Create(BitmapToImageSource(image.ToBitmap()), matToImageSource(resultingMat));
+        return matToImageSource(resultingMat);
         }
     }
 
@@ -94,21 +90,6 @@ public class ImageProcessor
         }
     }
 
-    private Image<Bgr, byte> cropUpperPart(Image<Bgr, byte> originalImage, int percentage) {
-        var oldRoi = originalImage.ROI;
-        originalImage.ROI = new Rectangle(0, percentage * originalImage.Height / 100, originalImage.Width, originalImage.Height);
-        var ret = originalImage.Copy();
-        originalImage.ROI = oldRoi;
-        return ret;
-    }
-
-
-
-    static GpuMat byteArrayToGpuMat(byte[] byteArray)
-    {
-        var bitmap = ConvertByteToImage(byteArray);
-        return imageToGpuMat(bitmap);
-    }
 
     static GpuMat imageToGpuMat(Image<Bgr, byte> image)
     {
@@ -147,7 +128,7 @@ public class ImageProcessor
     static BitmapImage matToImageSource(Mat mat)
     {
         var bitmap = mat.ToImage<Bgr, Byte>().ToBitmap();
-        return BitmapToImageSource(bitmap);
+        return BitmapImageUtility.BitmapToImageSource(bitmap);
     }
 
     static BitmapImage GpuMatToImageSource(GpuMat gpuMat)
@@ -155,38 +136,11 @@ public class ImageProcessor
         var image = new Image<Bgr, Byte>(gpuMat.Size.Width, gpuMat.Size.Height);
         gpuMat.Download(image);
         var bitmap = image.ToBitmap();
-        return BitmapToImageSource(bitmap);
+        return BitmapImageUtility.BitmapToImageSource(bitmap);
     }
 
-    static BitmapImage BitmapToImageSource(Bitmap bitmap)
-    {
 
-        using (MemoryStream memory = new MemoryStream())
-        {
-            try
-            {
-                bitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Bmp);
-                memory.Position = 0;
-                BitmapImage bitmapimage = new BitmapImage();
-                bitmapimage.BeginInit();
-                bitmapimage.StreamSource = memory;
-                bitmapimage.CacheOption = BitmapCacheOption.OnLoad;
-                bitmapimage.EndInit();
 
-                return bitmapimage;
-            }
-            catch (AccessViolationException e)
-            {
-                throw new WarningException(e.Message, e);
-            }
-        }
-
-    }
-
-    public static Image<Bgr, byte> ConvertByteToImage(byte[] bytes)
-    {
-        return new Bitmap(Image.FromStream(new MemoryStream(bytes), true, true)).ToImage<Bgr, byte>();
-    }
 
     public static byte[] ConvertImageToByte(Image<Bgr, byte> My_Image)
     {
