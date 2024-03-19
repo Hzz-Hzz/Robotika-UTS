@@ -16,11 +16,13 @@ namespace WpfApp1;
 
 public class RoadEdgeImageProcessing
 {
+    private MainRoadImageProcessing _mainRoadImageProcessing = new ();
     private ContourDrawer contourPointDrawer = new (3, new MCvScalar(0, 255, 0), LineType.Filled);
     private ContourDrawer contourArrowDrawer = new (2, new MCvScalar(0, 0, 255), LineType.FourConnected);
 
-    public BitmapImage processImage(Image<Bgr, byte> image)
-    {
+    public BitmapImage processImageAsBitmap(Image<Bgr, byte> image) {
+        var mainRoadMat = _mainRoadImageProcessing.processImage(image);
+
         using (var gpuMat = imageToGpuMat(image))
         using (var resultingMat = new Mat())
         {
@@ -36,12 +38,14 @@ public class RoadEdgeImageProcessing
         CvInvoke.DrawContours(resultingMat, contours, -1, new MCvScalar(255, 0 ,0));
 
         var contourList = new ContourList(contours, resultingMat.Width, resultingMat.Height);
-        // contourList.removeOutliers();
+        contourList.boundariesNotToIntersectWith = _mainRoadImageProcessing.resultingPolygons;
+        contourList.initializeContourLinks();
+
         contourPointDrawer.drawContourPoints(contourList, resultingMat, 3);
         contourArrowDrawer.drawContourLinks(contourList, resultingMat, 0.12);
         contourArrowDrawer.drawContourCalculationOrdering(contourList, resultingMat, 1);
 
-
+        CvInvoke.Add(resultingMat, mainRoadMat, resultingMat);
         return matToImageSource(resultingMat);
         }
     }

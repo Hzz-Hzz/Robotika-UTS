@@ -79,7 +79,7 @@ public class SendCarView : MonoBehaviour
     void Update() {
         if (onPauseThreadShouldRun != null)
             return;
-        const int MaxFPS = 10;
+        const int MaxFPS = 40;
         if (_stopwatch.ElapsedMilliseconds < 1000 / MaxFPS)
             return;
         _stopwatch.Restart();
@@ -146,5 +146,12 @@ public class SendCarView : MonoBehaviour
         targetCameraGameobject.targetTexture = oldCameraTargetTexture;
 
         return image;
+    }
+
+    void OnApplicationQuit() {
+        if (_clientNamedPipe != null && _clientNamedPipe.IsConnected) {
+            _clientNamedPipe.Close();
+            _clientNamedPipe.Dispose();
+        }
     }
 }

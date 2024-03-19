@@ -61,18 +61,6 @@ public class ContourPoint
         return thisAngle < radiansThreshold;
     }
 
-    // public bool isOutlier(double radiansThreshold) {
-    //     if (link == null)
-    //         return false;
-    //     if (backwardLink == null)
-    //         return false;
-    //     if (backwardLink.backwardLink == null)
-    //         return false;
-    //
-    //     var thisAngle = calculateAngle(backwardLink, this, link);
-    //     var prevAngle = calculateAngle(backwardLink.backwardLink, backwardLink, this);
-    //     return thisAngle + prevAngle < radiansThreshold;
-    // }
 
     public void deleteThis() {  // just like remove a linked list
         if (this.backwardLink != null)

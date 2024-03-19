@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.IO;
@@ -17,11 +18,17 @@ namespace WpfApp1;
 public class MainRoadImageProcessing
 {
 
-    public BitmapImage processImage(Image<Bgr, byte> image) {
+    public List<Polygon> resultingPolygons = new ();
+
+    public BitmapImage processImageAsBitmap(Image<Bgr, byte> image) {
+        using (var gpuMat = imageToGpuMat(image))
+            return BitmapImageUtility.BitmapToImageSource(processImage(gpuMat).ToBitmap());
+    }
+    public Mat processImage(Image<Bgr, byte> image) {
         using (var gpuMat = imageToGpuMat(image))
             return processImage(gpuMat);
     }
-    public BitmapImage processImage(GpuMat gpuMat)
+    public Mat processImage(GpuMat gpuMat)
     {
         using (var newGpuMat = filterByDistanceWithTargetColor(gpuMat, 130, 130, 130, 200))
         using (var newGpuMat2 = filterByDistanceWithTargetColor(gpuMat, 205, 205, 205, 215))
@@ -29,8 +36,7 @@ public class MainRoadImageProcessing
             CudaInvoke.Max(newGpuMat, newGpuMat2, newGpuMat);
             newGpuMat.Download(resultingMat);
 
-            using (var visualizationMat = contourProcessor(resultingMat))
-                return  matToImageSource(visualizationMat);
+            return contourProcessor(resultingMat);
         }
     }
 
@@ -42,10 +48,12 @@ public class MainRoadImageProcessing
 
         VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
         CvInvoke.FindContours(mat, contours, null, RetrType.List, ChainApproxMethod.ChainApproxSimple);
+
+        resultingPolygons.Clear();
         for (int i = 0; i < contours.Size; i++) {
             VectorOfPoint approx = new VectorOfPoint();
             CvInvoke.ApproxPolyDP(contours[i], approx, 6, true);
-
+            resultingPolygons.Add(Polygon.fromVectorOfPoint(approx));
             CvInvoke.Polylines(ret, new VectorOfVectorOfPoint(approx), true, new MCvScalar(255, 255, 0), 2);
         }
 

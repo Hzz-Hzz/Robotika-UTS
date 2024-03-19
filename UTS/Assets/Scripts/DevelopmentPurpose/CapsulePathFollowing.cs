@@ -63,7 +63,7 @@ public class CapsulePathFollowing : MonoBehaviour
 
     void updateTargetPosition()
     {
-        if (Vector3.Distance(gameObject.transform.position, targetPosition()) > 5)
+        if (Vector3.Distance(gameObject.transform.position, targetPosition()) > 2)
             return;
         slerpTime = 0;
         currentPath = (currentPath + 1) % paths.Length;

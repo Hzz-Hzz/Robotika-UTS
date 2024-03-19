@@ -112,16 +112,16 @@ public class ViewModel : INotifyPropertyChanged
 
                     try {
                         var origImage = BitmapImageUtility.BitmapToImageSource(image.ToBitmap());
-                        var resultingRoadEdgeImage = _roadEdgeImageProcessing.processImage(image);
-                        var resultingMainRoadImage = _mainRoadImageProcessing.processImage(image);
+                        var resultingRoadEdgeImage = _roadEdgeImageProcessing.processImageAsBitmap(image);
+                        // var resultingMainRoadImage = _mainRoadImageProcessing.processImage(image);
 
 
                         origImage.Freeze();
                         resultingRoadEdgeImage.Freeze();
-                        resultingMainRoadImage.Freeze();
+                        // resultingMainRoadImage.Freeze();
                         ImageSourceOriginal = origImage;
                         ImageSourceRoadEdge = resultingRoadEdgeImage;
-                        ImageSourceRoadMain = resultingMainRoadImage;
+                        // ImageSourceRoadMain = resultingMainRoadImage;
                     }
                     catch (ArgumentException e) {
                         if (e.Message.Contains("Parameter is not valid")) {

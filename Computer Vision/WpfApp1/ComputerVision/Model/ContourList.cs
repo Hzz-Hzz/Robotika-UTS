@@ -21,6 +21,8 @@ public class ContourList
 
     private VectorOfVectorOfPoint rawContours;
     private List<ContourPoint> _contours;
+    public List<Polygon>? boundariesNotToIntersectWith;
+
     public List<ContourPoint> contours => _contours;
     public ILinkScoreCalculation linkScoreCalculation;
     public double heightPerWidthAspectRatio => _sourceImageHeight / _sourceImageWidth;
@@ -34,7 +36,6 @@ public class ContourList
         this._sourceImageWidth = sourceImageWidth;
         this._sourceImageHeight = sourceImageHeight;
         initializeContourList();
-        initializeContourLinks();
     }
 
     private void initializeContourList() {
@@ -50,7 +51,7 @@ public class ContourList
         _contours.Sort((a, b) =>  linkScoreCalculation.nodePrioritySorter(this, a, b));
     }
 
-    private void initializeContourLinks() {
+    public void initializeContourLinks() {
         // This is just for a set. The value is unused
         var visitedLinks = new ConditionalWeakTable<ContourPoint, ContourPoint>();
 
@@ -59,9 +60,9 @@ public class ContourList
         foreach (var contour in _contours) {
             ContourPoint? targetLink = contour;
             if (visitedLinks.TryGetValue(targetLink, out _))
-                break;
+                continue;
             numberOfPath++;
-            if (numberOfPath > 2)  // at most 2 paths
+            if (numberOfPath > 4)  // at most 2 paths
                 break;
 
             var vectorSet = new SetOfNormalizedVector2(0.2);
@@ -100,6 +101,9 @@ public class ContourList
             if (nextLinkCandidate.order != null)  // to make sure the graph will be acyclic graph
                 continue;
             if (!linkScoreCalculation.isHardConstraintSatisfied(this, toBeUpdated, nextLinkCandidate))
+                continue;
+            if (boundariesNotToIntersectWith != null
+                && Polygon.checkIfIntersectWithAnyPolygon(boundariesNotToIntersectWith, toBeUpdated.point, nextLinkCandidate.point))
                 continue;
 
             var score = linkScoreCalculation.getScore(toBeUpdated, nextLinkCandidate);
