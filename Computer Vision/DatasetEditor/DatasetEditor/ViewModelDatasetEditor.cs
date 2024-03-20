@@ -21,10 +21,10 @@ using Emgu.Util;
 
 namespace WpfApp1;
 
-public class ViewModel : INotifyPropertyChanged
+public class ViewModelDatasetEditor : INotifyPropertyChanged
 {
     public int datasetId = 0;
-    private string datasetFolder = "H:\\01_Kuliah\\01_Dokumen\\22 - Robotika\\02 Tugas Unity\\10 Persiapan UTS\\UTS template\\dataset";
+    public static readonly string datasetFolder = "H:\\01_Kuliah\\01_Dokumen\\22 - Robotika\\02 Tugas Unity\\10 Persiapan UTS\\UTS template\\dataset";
     public int maxFileNo;
 
 
@@ -81,7 +81,7 @@ public class ViewModel : INotifyPropertyChanged
     private MainRoadImageProcessing _mainRoadImageProcessing = new ();
 
 
-    public ViewModel() {
+    public ViewModelDatasetEditor() {
         maxFileNo = Int32.Parse(File.ReadAllText(Path.Join(datasetFolder, "-fileno")));
     }
 

@@ -19,7 +19,7 @@ using Emgu.CV.Structure;
 
 namespace WpfApp1;
 
-public class ViewModel : INotifyPropertyChanged
+public class ViewModelVisualServer : INotifyPropertyChanged
 {
 
 
@@ -70,7 +70,7 @@ public class ViewModel : INotifyPropertyChanged
     private MainRoadImageProcessing _mainRoadImageProcessing = new ();
 
 
-    public ViewModel()
+    public ViewModelVisualServer()
     {
     }
 

@@ -23,22 +23,22 @@ namespace DatasetEditor
     /// </summary>
     public partial class MainWindow : Window
     {
-        private ViewModel viewModel;
+        private ViewModelDatasetEditor _viewModelDatasetEditor;
 
         public MainWindow()
         {
             InitializeComponent();
-            viewModel = new ViewModel();
-            this.DataContext = viewModel;
+            _viewModelDatasetEditor = new ViewModelDatasetEditor();
+            this.DataContext = _viewModelDatasetEditor;
         }
 
         private void saveDataLabel() {
             var result = Newtonsoft.Json.JsonConvert.SerializeObject(datasetLabelModel);
-            File.WriteAllText(viewModel.datasetPath, result);
+            File.WriteAllText(_viewModelDatasetEditor.datasetPath, result);
         }
 
         private void MainWindow_OnLoaded(object sender, RoutedEventArgs e) {
-            viewModel.nextDataset();
+            _viewModelDatasetEditor.nextDataset();
             updateLabel();
         }
 
@@ -67,7 +67,7 @@ namespace DatasetEditor
 
             if (e.Key == Key.Enter) {
                 saveDataLabel();
-                viewModel.nextDataset();
+                _viewModelDatasetEditor.nextDataset();
                 updateLabel();
                 return;
             }
@@ -76,7 +76,7 @@ namespace DatasetEditor
 
         private void updateLabel() {
             datasetLabel.Text = $"angle={datasetLabelModel.angle} speed={datasetLabelModel.speed}";
-            this.Title = $"{viewModel.datasetId}.png";
+            this.Title = $"{_viewModelDatasetEditor.datasetId}.png";
         }
     }
 }

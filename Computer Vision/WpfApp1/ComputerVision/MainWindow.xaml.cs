@@ -25,12 +25,12 @@ namespace WpfApp1
     /// </summary>
     public partial class MainWindow : Window
     {
-        private ViewModel? viewModel;
+        private ViewModelVisualServer? viewModel;
 
         public MainWindow()
         {
             InitializeComponent();
-            viewModel = new ViewModel();
+            viewModel = new ViewModelVisualServer();
             this.DataContext = viewModel;
             viewModel.start();
         }
@@ -62,7 +62,7 @@ namespace WpfApp1
             {
                 var controlSpacePosition = e.GetPosition(targetElement);
                 var imageControl = targetElement as Image;
-                var mainViewModel = ((ViewModel)base.DataContext);
+                var mainViewModel = ((ViewModelVisualServer)base.DataContext);
                 if (imageControl != null && imageControl.Source != null)
                 {
                     // Convert from control space to image space
