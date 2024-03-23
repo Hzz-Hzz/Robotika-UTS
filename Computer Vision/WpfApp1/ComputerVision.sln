@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataFrameGenerator", "DataF
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictorModel", "PredictorModel\PredictorModel.csproj", "{AC426008-FCF7-4467-A0DD-36D24D64D46B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageProcessingLogic", "ImageProcessingLogic\ImageProcessingLogic.csproj", "{A3EF2CF5-DC42-40BB-8440-3F304B5D0EA3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{AC426008-FCF7-4467-A0DD-36D24D64D46B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AC426008-FCF7-4467-A0DD-36D24D64D46B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AC426008-FCF7-4467-A0DD-36D24D64D46B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A3EF2CF5-DC42-40BB-8440-3F304B5D0EA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3EF2CF5-DC42-40BB-8440-3F304B5D0EA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3EF2CF5-DC42-40BB-8440-3F304B5D0EA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3EF2CF5-DC42-40BB-8440-3F304B5D0EA3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

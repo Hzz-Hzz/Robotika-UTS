@@ -10,7 +10,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\DatasetEditor\DatasetEditor\DatasetEditor.csproj" />
-      <ProjectReference Include="..\ComputerVision\ComputerVision.csproj" />
     </ItemGroup>
 
     <ItemGroup>

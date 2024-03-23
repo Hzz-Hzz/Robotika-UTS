@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0-windows</TargetFramework>
+        <Nullable>enable</Nullable>
+        <UseWPF>true</UseWPF>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Emgu.CV" Version="4.8.1.5350" />
+      <PackageReference Include="Emgu.CV.Bitmap" Version="4.8.1.5350" />
+      <PackageReference Include="Emgu.CV.runtime.windows.cuda" Version="4.4.0.4099" />
+      <PackageReference Include="Emgu.CV.UI" Version="4.8.1.5350" />
+    </ItemGroup>
+
+</Project>
