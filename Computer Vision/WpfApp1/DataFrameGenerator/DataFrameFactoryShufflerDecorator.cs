@@ -29,7 +29,7 @@ public class DataFrameFactoryShufflerDecorator : IDataFrameFromContourListFactor
 
 
 
-class ArrayShuffler
+public class ArrayShuffler
 {
     private int[]? shuffleResult;
 
@@ -49,6 +49,22 @@ class ArrayShuffler
 
         var ret = new T[array.Length];
         for (int i = 0; i < array.Length; i++) {
+            var index = shuffleResult[i];
+            ret[i] = array[index];
+        }
+        return ret;
+    }
+
+    public List<T>? applyShuffle<T>(List<T>? array) {
+        if (array == null)
+            return null;
+        if (shuffleResult == null)
+            throw new ValidationException("shuffleResult is null. Probably You forgot to call createRandomShuffle");
+        if (shuffleResult.Length != array.Count)
+            throw new ValidationException("Given array has different length than the one initialized when calling createRandomShuffle");
+
+        var ret = new T[array.Count].ToList();
+        for (int i = 0; i < array.Count; i++) {
             var index = shuffleResult[i];
             ret[i] = array[index];
         }

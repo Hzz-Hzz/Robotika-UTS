@@ -2,13 +2,20 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFramework>net7.0-windows</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="CsvHelper" Version="31.0.2" />
+      <PackageReference Include="Microsoft.ML" Version="3.0.1" />
       <PackageReference Include="Microsoft.ML.AutoML" Version="0.21.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\DataFrameGenerator\DataFrameGenerator.csproj" />
+      <ProjectReference Include="..\ImageProcessingLogic\ImageProcessingLogic.csproj" />
     </ItemGroup>
 
 </Project>
