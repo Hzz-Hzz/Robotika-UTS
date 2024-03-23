@@ -1,6 +1,11 @@
+using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Numerics;
 using DataFrameGenerator.TrainingDataExtractStrategy;
+using DatasetEditor.model;
 using Microsoft.Data.Analysis;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using WpfApp1;
 
 namespace DataFrameGenerator;
@@ -29,37 +34,81 @@ public class FewFirstContourPointInOneRowDataFrameFactory : IDataFrameFromContou
             dfCol.Add(new PrimitiveDataFrameColumn<double>(yDirName(i)));
             dfCol.Add(new PrimitiveDataFrameColumn<double>(lengthName(i)));
         }
+        return dfCol;
+    }
+
+    public List<PrimitiveDataFrameColumn<T>> getDataFrameColumnListFromType<T>(Type? labelType) where T : unmanaged {
+        if (labelType == null) {
+            return new List<PrimitiveDataFrameColumn<T>>();
+        }
+
+        var dfCol = new List<PrimitiveDataFrameColumn<T>>();
+        var fieldsInfo = labelType.GetFields();
+        foreach (var field in fieldsInfo) {
+            if (field.FieldType != typeof(T))
+                throw new ValidationException($"Invalid Type: {field.FieldType.Name}");
+            dfCol.Add(new PrimitiveDataFrameColumn<T>(field.Name));
+        }
 
         return dfCol;
     }
 
-    public DataFrame getDataFrame(params ContourList[] contourLists) {
+    public DataFrame getDataFrame(ContourList[] contourLists, DatasetImageLabel[]? labels=null) {
         var dfCol = getDataFrameColumnList();
-        foreach (var contourList in contourLists) {
+        var labelCols = getDataFrameColumnListFromType<double>(
+            labels == null ? null : typeof(DatasetImageLabel));
+
+        for (var contourListIndex = 0; contourListIndex < contourLists.Length; contourListIndex++) {
+            var contourList = contourLists[contourListIndex];
+            var label = labels==null? null : labels[contourListIndex];
+
             var contourPoints = _orderingStrategy.getContourPointAsList(contourList);
             var numOfNonNullCol = Math.Min(numberOfFewFirstContourPoint, contourPoints.Count);
             var numOfNullCol = numberOfFewFirstContourPoint - numOfNonNullCol;
 
-            for (int i = 0; i < numOfNonNullCol; i++) {
-                var offset = i * totalNumberColumnsGeneratedForEachContourPoint;
-
-                var contourPoint = _transformationDecorator.applyTransformation(contourList, contourPoints[i]);
-                var extractedData = extract(contourPoint);
-                for (int j = 0; j < totalNumberColumnsGeneratedForEachContourPoint; j++) {
-                    dfCol[offset + j].Append(extractedData[j]);
-                }
-            }
-            for (int i = 0; i < numOfNullCol; i++) {
-                var offset = (numOfNonNullCol + i) * totalNumberColumnsGeneratedForEachContourPoint;
-                for (int j = 0; j < totalNumberColumnsGeneratedForEachContourPoint; j++) {
-                    var x = dfCol[offset + j];
-
-                }
-            }
+            copyAllContourListToDf(numOfNonNullCol, dfCol, contourList, contourPoints);
+            paddingAllMissingContourPointToDf(numOfNullCol, numOfNonNullCol, dfCol);
+            updateLabelCols(label, labelCols);
         }
 
+        dfCol.AddRange(labelCols);
         var df = new DataFrame(dfCol);
         return df;
+    }
+
+    private void copyAllContourListToDf(int numOfNonNullCol, List<PrimitiveDataFrameColumn<double>> dfCol,
+        ContourList contourList, List<ContourPoint> contourPoints
+    ) {
+        for (int i = 0; i < numOfNonNullCol; i++) {
+            var offset = i * totalNumberColumnsGeneratedForEachContourPoint;
+
+            var contourPoint = _transformationDecorator.applyTransformation(contourList, contourPoints[i]);
+            Debug.Assert(contourPoint != null);
+            var extractedData = extract(contourPoint);
+            for (int j = 0; j < totalNumberColumnsGeneratedForEachContourPoint; j++) {
+                dfCol[offset + j].Append(extractedData[j]);
+            }
+        }
+    }
+
+    private void paddingAllMissingContourPointToDf(int numOfNullCol, int numOfNonNullCol, List<PrimitiveDataFrameColumn<double>> dfCol) {
+        for (int i = 0; i < numOfNullCol; i++) {
+            var offset = (numOfNonNullCol + i) * totalNumberColumnsGeneratedForEachContourPoint;
+            for (int j = 0; j < totalNumberColumnsGeneratedForEachContourPoint; j++) {
+                dfCol[offset + j].Append(0);
+            }
+        }
+    }
+
+    private void updateLabelCols(DatasetImageLabel? label, List<PrimitiveDataFrameColumn<double>> labelCols) {
+        if (label == null)
+            return;
+        var jObject = JObject.FromObject(label);
+        var dictionary = jObject.ToObject<Dictionary<string, double>>();
+        foreach (var labelCol in labelCols) {
+            Debug.Assert(dictionary != null);
+            labelCol.Append(dictionary[labelCol.Name]);
+        }
     }
 
 

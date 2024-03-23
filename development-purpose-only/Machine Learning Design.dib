@@ -1,0 +1,57 @@
+#!meta
+
+{"kernelInfo":{"defaultKernelName":"csharp","items":[{"aliases":[],"languageName":"csharp","name":"csharp"}]}}
+
+#!csharp
+
+#r "nuget:Microsoft.Data.Analysis"
+#r "nuget: XPlot.Plotly"
+#r "nuget: XPlot.Plotly.Interactive"
+#r "nuget: Plotly.NET.CSharp"
+#r "nuget: MathNet.Numerics, 5.0.0"
+#r "nuget: Microsoft.ML, 3.0.1"
+#r "nuget: Microsoft.ML.AutoML, 0.21.1"
+
+#!csharp
+
+using Microsoft.ML;
+using Microsoft.ML.AutoML;
+
+#!csharp
+
+var TARGET_COLUMN_NAME_TO_PREDICT = "angle";
+var IGNORED_COLUMN = "speed";
+
+var filePath = "../dataset/df.csv";
+
+#!csharp
+
+var context = new MLContext();
+
+var inference = context.Auto().InferColumns(filePath, labelColumnName: TARGET_COLUMN_NAME_TO_PREDICT, separatorChar: ';');
+inference.ColumnInformation.IgnoredColumnNames.Add(IGNORED_COLUMN);
+
+var loader = context.Data.CreateTextLoader(inference.TextLoaderOptions);
+var angleDataset = loader.Load(filePath);
+
+
+
+// data.ToDataFrame().Columns.Select(e => e.DataType).ToList()
+angleDataset.ToDataFrame()
+
+#!csharp
+
+// var labels = new string[]{"angle", "speed"};
+// var features = angleDataset.Schema.Select(col => col.Name).Where(colName => !labels.Contains(colName)).ToArray();
+
+var split = context.Data.TrainTestSplit(angleDataset, testFraction: 0.2);
+
+
+
+var pipeline = context.Regression.Trainers.LightGbm(TARGET_COLUMN_NAME_TO_PREDICT, "Features");
+
+var model = pipeline.Fit(split.TrainSet);
+var predictions = model.Transform(split.TestSet);
+var metrics = context.Regression.Evaluate(predictions, TARGET_COLUMN_NAME_TO_PREDICT);
+
+$"Metrics Result - {metrics.MeanAbsoluteError}"

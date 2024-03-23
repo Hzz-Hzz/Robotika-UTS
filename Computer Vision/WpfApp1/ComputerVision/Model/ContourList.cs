@@ -35,11 +35,11 @@ public class ContourList
         this.rawContours = rawContours;
         this._sourceImageWidth = sourceImageWidth;
         this._sourceImageHeight = sourceImageHeight;
+        _contours = new List<ContourPoint>(rawContours.Size);
         initializeContourList();
     }
 
     private void initializeContourList() {
-        _contours = new List<ContourPoint>(rawContours.Size);
         for (int i = 0; i < this.rawContours.Size; i++) {
             var contour = ContourPoint.fromVectorOfPoint(rawContours[i]);
             if (contour == null)

@@ -16,11 +16,15 @@ using WpfApp1;
 class Program
 {
     public static void Main(string[] args) {
-        var viewModelDatasetEditor = new ViewModelDatasetEditor();
         var imagesFolder = ViewModelDatasetEditor.datasetFolder;
 
         var imageFileNames = Directory.GetFiles(imagesFolder, "*.png", SearchOption.AllDirectories);
         var labelFileNames = Directory.GetFiles(imagesFolder, "*.label.json", SearchOption.AllDirectories);
+        var labels = labelFileNames.Select(e => {
+            DatasetImageLabel ret = JsonConvert.DeserializeObject<DatasetImageLabel>(
+                File.ReadAllText(e)) ?? throw new InvalidOperationException();
+            return ret;
+        }).ToArray();
 
 
         // translate to cartesius, then rescale it
@@ -32,7 +36,11 @@ class Program
 
         var byteToImageConverter = new ByteToCroppedImageFactory();
         var contourLists = new List<ContourList>();
-        foreach (var imageFileName in imageFileNames) {
+
+
+        for (var i = 0; i < imageFileNames.Length; i++) {
+            var imageFileName = imageFileNames[i];
+
             Console.WriteLine($"Converting {imageFileName}...");
             var content = File.ReadAllBytes(imageFileName);
             var image = byteToImageConverter.convert(content);
@@ -43,13 +51,9 @@ class Program
             contourLists.Add(contourList);
         }
 
-        // var csvOptions = new CsvDataFrameFormatter.Options()
-        // {
-        //     CultureInfo = CultureInfo.InvariantCulture, // or specify your desired culture
-        //     DecimalSeparator = '.' // or ',' depending on your needs
-        // };
-        var df = dataframeFactory.getDataFrame(contourLists.ToArray());
+
+        var df = dataframeFactory.getDataFrame(contourLists.ToArray(), labels);
         DataFrame.SaveCsv(df, Path.Join(imagesFolder, "df.csv"),
-            CultureInfo.CurrentCulture.TextInfo.ListSeparator[0]);
+            CultureInfo.CurrentCulture.TextInfo.ListSeparator[0], cultureInfo: new CultureInfo("en-US", false));
     }
 }
