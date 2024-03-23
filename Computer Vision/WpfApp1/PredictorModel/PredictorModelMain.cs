@@ -6,7 +6,7 @@ using Microsoft.ML;
 using PredictorModel;
 using ValidationException = System.ComponentModel.DataAnnotations.ValidationException;
 
-class Program
+public class PredictorModelMain
 {
     public static MLContext context = new MLContext();
 

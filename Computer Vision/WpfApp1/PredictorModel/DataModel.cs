@@ -73,7 +73,7 @@ public class DataModel
         point = _transformationDecorator.applyTransformation(contourList, point, true);
         x = (float)point.X;
         y = (float)point.Y;
-        var direction = point.link.vector2 - point.vector2;
+        var direction = point.link==null? new Vector2(0,0) : (point.link.vector2 - point.vector2);
         len = direction.Length();
 
         direction = Vector2.Normalize(direction);

@@ -18,7 +18,7 @@ namespace WpfApp1;
 public class MainRoadImageProcessing
 {
 
-    public List<Polygon> resultingPolygons = new ();
+    public List<Polygon>? resultingPolygons = null;
 
     public BitmapImage processImageAsBitmap(Image<Bgr, byte> image) {
         using (var gpuMat = imageToGpuMat(image))
@@ -51,6 +51,7 @@ public class MainRoadImageProcessing
         VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
         CvInvoke.FindContours(mat, contours, null, RetrType.List, ChainApproxMethod.ChainApproxSimple);
 
+        resultingPolygons ??= new();
         resultingPolygons.Clear();
         for (int i = 0; i < contours.Size; i++) {
             VectorOfPoint approx = new VectorOfPoint();

@@ -26,6 +26,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\ImageProcessingLogic\ImageProcessingLogic.csproj" />
+      <ProjectReference Include="..\PredictorModel\PredictorModel.csproj" />
     </ItemGroup>
 
 </Project>

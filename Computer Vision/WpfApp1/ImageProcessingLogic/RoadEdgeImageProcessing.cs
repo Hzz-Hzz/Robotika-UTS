@@ -24,8 +24,12 @@ public class RoadEdgeImageProcessing
 
     public BitmapImage processImageAsBitmap(Image<Bgr, byte> image) {
         var mainRoadMat = _mainRoadImageProcessing.processImage(image);
+        return getImageFromContourInformation(getContourList(image, _mainRoadImageProcessing.resultingPolygons,
+            true), mainRoadMat);
+    }
 
-        var resultingContourListAndMat = getContourList(image, true);
+    public BitmapImage getImageFromContourInformation(Tuple<ContourList, Mat?> contourAndMat, Mat mainRoadMat) {
+        var resultingContourListAndMat = contourAndMat;
         var contourList = resultingContourListAndMat.Item1;
         Debug.Assert(resultingContourListAndMat.Item2 != null, "resultingContourListAndMat.Item2 != null");
         Mat resultingMat = resultingContourListAndMat.Item2;
@@ -38,7 +42,7 @@ public class RoadEdgeImageProcessing
         return matToImageSource(resultingMat);
     }
 
-    public Tuple<ContourList, Mat?> getContourList(Image<Bgr, byte> image, bool returnMat = false) {
+    public Tuple<ContourList, Mat?> getContourList(Image<Bgr, byte> image, List<Polygon>? boundariesNotToIntersectWith, bool returnMat = false) {
         using (var gpuMat = imageToGpuMat(image)) {
             var resultingMat = new Mat();
 
@@ -54,7 +58,7 @@ public class RoadEdgeImageProcessing
             CvInvoke.DrawContours(resultingMat, contours, -1, new MCvScalar(255, 0 ,0));
 
             var contourList = new ContourList(contours, resultingMat.Width, resultingMat.Height);
-            contourList.boundariesNotToIntersectWith = _mainRoadImageProcessing.resultingPolygons;
+            contourList.boundariesNotToIntersectWith = boundariesNotToIntersectWith ?? new List<Polygon>();
             contourList.initializeContourLinks();
             contourList.removeOutliers();
             if (!returnMat) {

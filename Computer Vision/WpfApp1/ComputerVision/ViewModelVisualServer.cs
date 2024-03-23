@@ -16,6 +16,7 @@ using System.Xml.XPath;
 using Emgu.CV;
 using Emgu.CV.Cuda;
 using Emgu.CV.Structure;
+using PredictorModel;
 
 namespace WpfApp1;
 
@@ -35,6 +36,8 @@ public class ViewModelVisualServer : INotifyPropertyChanged
     public ImageSource imageSourceRoadMain {
         get { return ImageSourceRoadMain; }
     }
+
+    public string anglePrediction { get; set; }
 
     private BitmapImage ___imageSourceOriginal;
     private BitmapImage ___imageSourceRoadEdge;
@@ -81,7 +84,10 @@ public class ViewModelVisualServer : INotifyPropertyChanged
     {
         Thread thread = new Thread(ServerThread_Read);
         thread.Start();
+        _predictor = PredictorModelMain.getPredictor(out _, 0.0f);
     }
+
+    private RegressionPredictor<DataModel, float> _predictor;
 
     private void ServerThread_Read()
     {
@@ -112,9 +118,16 @@ public class ViewModelVisualServer : INotifyPropertyChanged
 
                     try {
                         var origImage = ImageUtility.BitmapToImageSource(image.ToBitmap());
-                        var resultingRoadEdgeImage = _roadEdgeImageProcessing.processImageAsBitmap(image);
-                        // var resultingMainRoadImage = _mainRoadImageProcessing.processImage(image);
 
+                        var resultingMainRoadImage = _mainRoadImageProcessing.processImage(image);
+                        var contourInformation = _roadEdgeImageProcessing.getContourList(image,
+                            _mainRoadImageProcessing.resultingPolygons, true);
+                        var resultingRoadEdgeImage = _roadEdgeImageProcessing.getImageFromContourInformation(contourInformation, resultingMainRoadImage);
+
+                        var predictionInput = DataModel.fromContourList(contourInformation.Item1);
+                        var result = _predictor.predict(predictionInput);
+                        anglePrediction = $"{result}";
+                        PropertyChanged(this, new PropertyChangedEventArgs("anglePrediction"));
 
                         origImage.Freeze();
                         resultingRoadEdgeImage.Freeze();

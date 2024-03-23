@@ -45,8 +45,11 @@ class Program
             var content = File.ReadAllBytes(imageFileName);
             var image = byteToImageConverter.convert(content);
 
+            var imageMainRoadProcessor = new MainRoadImageProcessing();
+            imageMainRoadProcessor.processImage(image);  // to initialize the imageMainRoadProcessor.resultingPolygons
+
             var imageEdgeProcessor = new RoadEdgeImageProcessing();
-            var processingResult = imageEdgeProcessor.getContourList(image);
+            var processingResult = imageEdgeProcessor.getContourList(image, imageMainRoadProcessor.resultingPolygons);
             var contourList = processingResult.Item1;
             contourLists.Add(contourList);
         }
