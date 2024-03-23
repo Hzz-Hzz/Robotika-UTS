@@ -4,7 +4,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComputerVision", "ComputerV
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatasetEditor", "..\DatasetEditor\DatasetEditor\DatasetEditor.csproj", "{A0CD464B-E9D2-4B8A-AC15-94DE8396154A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModelTrainer", "ModelTrainer\ModelTrainer.csproj", "{19A4D443-4089-4A22-BCE3-BE2045EFBDEC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataFrameGenerator", "DataFrameGenerator\DataFrameGenerator.csproj", "{19A4D443-4089-4A22-BCE3-BE2045EFBDEC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -22,7 +22,7 @@ public class MainRoadImageProcessing
 
     public BitmapImage processImageAsBitmap(Image<Bgr, byte> image) {
         using (var gpuMat = imageToGpuMat(image))
-            return BitmapImageUtility.BitmapToImageSource(processImage(gpuMat).ToBitmap());
+            return ImageUtility.BitmapToImageSource(processImage(gpuMat).ToBitmap());
     }
     public Mat processImage(Image<Bgr, byte> image) {
         using (var gpuMat = imageToGpuMat(image))
@@ -166,7 +166,7 @@ public class MainRoadImageProcessing
     static BitmapImage matToImageSource(Mat mat)
     {
         var bitmap = mat.ToImage<Bgr, Byte>().ToBitmap();
-        return BitmapImageUtility.BitmapToImageSource(bitmap);
+        return ImageUtility.BitmapToImageSource(bitmap);
     }
 
 }

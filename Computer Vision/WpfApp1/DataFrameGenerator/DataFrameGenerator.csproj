@@ -5,11 +5,17 @@
         <TargetFramework>net7.0-windows</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <PackageId>DataFrameGenerator</PackageId>
     </PropertyGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\DatasetEditor\DatasetEditor\DatasetEditor.csproj" />
       <ProjectReference Include="..\ComputerVision\ComputerVision.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
+      <PackageReference Include="Microsoft.Data.Analysis" Version="0.21.1" />
     </ItemGroup>
 
 </Project>

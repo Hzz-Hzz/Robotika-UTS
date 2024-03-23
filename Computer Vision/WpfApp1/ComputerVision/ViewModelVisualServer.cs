@@ -106,12 +106,12 @@ public class ViewModelVisualServer : INotifyPropertyChanged
                     var size = BitConverter.ToInt32(sizeRaw);
 
                     var imageByte = blockingReadExactly(reader, size, stoppingCriteria);
-                    var image = ConvertByteToImage(imageByte);
-                    image = cropUpperPart(image, 30);
+                    var converter = new ByteToCroppedImageFactory();
+                    var image = converter.convert(imageByte);
 
 
                     try {
-                        var origImage = BitmapImageUtility.BitmapToImageSource(image.ToBitmap());
+                        var origImage = ImageUtility.BitmapToImageSource(image.ToBitmap());
                         var resultingRoadEdgeImage = _roadEdgeImageProcessing.processImageAsBitmap(image);
                         // var resultingMainRoadImage = _mainRoadImageProcessing.processImage(image);
 
@@ -144,19 +144,7 @@ public class ViewModelVisualServer : INotifyPropertyChanged
         }
     }
 
-    private Image<Bgr, byte> cropUpperPart(Image<Bgr, byte> originalImage, int percentage) {
-        var oldRoi = originalImage.ROI;
-        originalImage.ROI = new Rectangle(0, percentage * originalImage.Height / 100, originalImage.Width, originalImage.Height);
-        var ret = originalImage.Copy();
-        originalImage.ROI = oldRoi;
-        return ret;
-    }
 
-
-    public static Image<Bgr, byte> ConvertByteToImage(byte[] bytes)
-    {
-        return new Bitmap(Image.FromStream(new MemoryStream(bytes), true, true)).ToImage<Bgr, byte>();
-    }
 
     private byte[] blockingReadExactly(BinaryReader streamReader, int bytesCount, Func<bool> stopFlag)
     {

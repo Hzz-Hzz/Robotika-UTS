@@ -114,7 +114,7 @@ public class ViewModelDatasetEditor : INotifyPropertyChanged
         image = cropUpperPart(image, 30);
 
         try {
-            var origImage = BitmapImageUtility.BitmapToImageSource(image.ToBitmap());
+            var origImage = ImageUtility.BitmapToImageSource(image.ToBitmap());
             var resultingRoadEdgeImage = _roadEdgeImageProcessing.processImageAsBitmap(image);
 
             origImage.Freeze();

@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Windows;
@@ -20,27 +21,14 @@ public class RoadEdgeImageProcessing
     private ContourDrawer contourPointDrawer = new (3, new MCvScalar(0, 255, 0), LineType.Filled);
     private ContourDrawer contourArrowDrawer = new (2, new MCvScalar(0, 0, 255), LineType.FourConnected);
 
+
     public BitmapImage processImageAsBitmap(Image<Bgr, byte> image) {
         var mainRoadMat = _mainRoadImageProcessing.processImage(image);
 
-        using (var gpuMat = imageToGpuMat(image))
-        using (var resultingMat = new Mat())
-        {
-        substractRedChannelFromMaxOfBlueAndGreen(gpuMat);
-        applyMorphologyEx(gpuMat);
-        gpuMat.Download(resultingMat);
-
-        var contours = new VectorOfVectorOfPoint();
-        CvInvoke.FindContours(resultingMat, contours, null,
-            RetrType.List, ChainApproxMethod.ChainApproxSimple);
-
-        CvInvoke.CvtColor(resultingMat, resultingMat, ColorConversion.Gray2Bgr);
-        CvInvoke.DrawContours(resultingMat, contours, -1, new MCvScalar(255, 0 ,0));
-
-        var contourList = new ContourList(contours, resultingMat.Width, resultingMat.Height);
-        contourList.boundariesNotToIntersectWith = _mainRoadImageProcessing.resultingPolygons;
-        contourList.initializeContourLinks();
-        contourList.removeOutliers();
+        var resultingContourListAndMat = getContourList(image, true);
+        var contourList = resultingContourListAndMat.Item1;
+        Debug.Assert(resultingContourListAndMat.Item2 != null, "resultingContourListAndMat.Item2 != null");
+        Mat resultingMat = resultingContourListAndMat.Item2;
 
         contourPointDrawer.drawContourPoints(contourList, resultingMat, 3);
         contourArrowDrawer.drawContourLinks(contourList, resultingMat, 0.12);
@@ -48,6 +36,32 @@ public class RoadEdgeImageProcessing
 
         CvInvoke.Add(resultingMat, mainRoadMat, resultingMat);
         return matToImageSource(resultingMat);
+    }
+
+    public Tuple<ContourList, Mat?> getContourList(Image<Bgr, byte> image, bool returnMat = false) {
+        using (var gpuMat = imageToGpuMat(image)) {
+            var resultingMat = new Mat();
+
+            substractRedChannelFromMaxOfBlueAndGreen(gpuMat);
+            applyMorphologyEx(gpuMat);
+            gpuMat.Download(resultingMat);
+
+            var contours = new VectorOfVectorOfPoint();
+            CvInvoke.FindContours(resultingMat, contours, null,
+                RetrType.List, ChainApproxMethod.ChainApproxSimple);
+
+            CvInvoke.CvtColor(resultingMat, resultingMat, ColorConversion.Gray2Bgr);
+            CvInvoke.DrawContours(resultingMat, contours, -1, new MCvScalar(255, 0 ,0));
+
+            var contourList = new ContourList(contours, resultingMat.Width, resultingMat.Height);
+            contourList.boundariesNotToIntersectWith = _mainRoadImageProcessing.resultingPolygons;
+            contourList.initializeContourLinks();
+            contourList.removeOutliers();
+            if (!returnMat) {
+                resultingMat.Dispose();
+                resultingMat = null;
+            }
+            return new Tuple<ContourList, Mat>(contourList, resultingMat);
         }
     }
 
@@ -133,7 +147,7 @@ public class RoadEdgeImageProcessing
     static BitmapImage matToImageSource(Mat mat)
     {
         var bitmap = mat.ToImage<Bgr, Byte>().ToBitmap();
-        return BitmapImageUtility.BitmapToImageSource(bitmap);
+        return ImageUtility.BitmapToImageSource(bitmap);
     }
 
     static BitmapImage GpuMatToImageSource(GpuMat gpuMat)
@@ -141,7 +155,7 @@ public class RoadEdgeImageProcessing
         var image = new Image<Bgr, Byte>(gpuMat.Size.Width, gpuMat.Size.Height);
         gpuMat.Download(image);
         var bitmap = image.ToBitmap();
-        return BitmapImageUtility.BitmapToImageSource(bitmap);
+        return ImageUtility.BitmapToImageSource(bitmap);
     }
 
 

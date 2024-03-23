@@ -5,10 +5,12 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Emgu.CV;
+using Emgu.CV.Structure;
 
 namespace WpfApp1;
 
-public static class BitmapImageUtility
+public static class ImageUtility
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct PixelColor
@@ -17,6 +19,19 @@ public static class BitmapImageUtility
         public byte Green;
         public byte Red;
         public byte Alpha;
+    }
+
+    public static Image<Bgr, byte> ConvertByteToImage(byte[] bytes)
+    {
+        return new Bitmap(Image.FromStream(new MemoryStream(bytes), true, true)).ToImage<Bgr, byte>();
+    }
+
+    public static Image<Bgr, byte> cropUpperPart(Image<Bgr, byte> originalImage, int percentage) {
+        var oldRoi = originalImage.ROI;
+        originalImage.ROI = new Rectangle(0, percentage * originalImage.Height / 100, originalImage.Width, originalImage.Height);
+        var ret = originalImage.Copy();
+        originalImage.ROI = oldRoi;
+        return ret;
     }
 
     public static PixelColor[,] GetPixels(BitmapSource source)

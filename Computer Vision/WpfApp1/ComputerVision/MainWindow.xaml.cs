@@ -53,8 +53,8 @@ namespace WpfApp1
             var color = getImageColor(source, coord);
             colorInformation.Text = $"({coord.X}, {coord.Y}) --> RGB({color.Red}, {color.Green}, {color.Blue})";
         }
-        public BitmapImageUtility.PixelColor getImageColor(BitmapImage img, Point point) {
-            return BitmapImageUtility.GetPixels(img)[(int) point.X, (int) point.Y];
+        public ImageUtility.PixelColor getImageColor(BitmapImage img, Point point) {
+            return ImageUtility.GetPixels(img)[(int) point.X, (int) point.Y];
         }
 
         public Point GetImageCoordsAt(MouseEventArgs e, UIElement targetElement) {
