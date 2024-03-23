@@ -123,6 +123,7 @@ public class ViewModelVisualServer : INotifyPropertyChanged
                         var contourInformation = _roadEdgeImageProcessing.getContourList(image,
                             _mainRoadImageProcessing.resultingPolygons, true);
                         var resultingRoadEdgeImage = _roadEdgeImageProcessing.getImageFromContourInformation(contourInformation, resultingMainRoadImage);
+                        contourInformation.Item2.Dispose();
 
                         var predictionInput = DataModel.fromContourList(contourInformation.Item1);
                         var result = _predictor.predict(predictionInput);

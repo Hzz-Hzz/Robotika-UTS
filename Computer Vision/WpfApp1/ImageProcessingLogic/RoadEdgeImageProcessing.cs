@@ -24,8 +24,14 @@ public class RoadEdgeImageProcessing
 
     public BitmapImage processImageAsBitmap(Image<Bgr, byte> image) {
         var mainRoadMat = _mainRoadImageProcessing.processImage(image);
-        return getImageFromContourInformation(getContourList(image, _mainRoadImageProcessing.resultingPolygons,
-            true), mainRoadMat);
+        var contourListInfo = getContourList(image, _mainRoadImageProcessing.resultingPolygons,
+            true);
+        try {
+            return getImageFromContourInformation(contourListInfo, mainRoadMat);
+        }
+        finally {
+            contourListInfo.Item2.Dispose();
+        }
     }
 
     public BitmapImage getImageFromContourInformation(Tuple<ContourList, Mat?> contourAndMat, Mat mainRoadMat) {
