@@ -84,20 +84,15 @@ public class SendCarView : MonoBehaviour
         if (_stopwatch.ElapsedMilliseconds < 1000 / MaxFPS)
             return;
         _stopwatch.Restart();
-        sendSceneToServer(false);
-        if (Input.GetKeyDown("p"))
+
+        if (Input.GetKeyDown("p")) {
+            Console.WriteLine("keydown p");
             saveDataset = !saveDataset;
+        }
+        sendSceneToServer(false);
     }
 
     void sendSceneToServer(bool isPaused) {
-        if (clientStreamWriter == null)
-            return;
-        if (!_clientNamedPipe.IsConnected){
-            // was connected but now disconnected
-            Debug.Log("Disconnected...");
-            reconnectNamedPipeAsync();
-        }
-
         try {
             if (cameraTexture2D != null)
                 Destroy(cameraTexture2D);
@@ -109,15 +104,22 @@ public class SendCarView : MonoBehaviour
         }
 
         try {
+            if (cameraSceneBytesData != null && !isPaused)
+                saveDatasetTo(cameraSceneBytesData);
+            if (clientStreamWriter == null)
+                return;
+            if (!_clientNamedPipe.IsConnected){
+                // was connected but now disconnected
+                Debug.Log("Disconnected...");
+                reconnectNamedPipeAsync();
+            }
+
             if (cameraSceneBytesData != null) {
                 clientStreamWriter?.Write(cameraSceneBytesData.Length);
                 clientStreamWriter?.Write(cameraSceneBytesData);
                 clientStreamWriter?.Flush();
-                if (!isPaused)
-                    saveDatasetTo(cameraSceneBytesData);
             }
-        }
-        catch (Exception e) when (e is IOException || e is ObjectDisposedException) {
+        } catch (Exception e) when (e is IOException || e is ObjectDisposedException) {
             if (e.Message.Contains("Pipe is broken")) return;
             if (e.Message.Contains("closed pipe")) return;
             throw;

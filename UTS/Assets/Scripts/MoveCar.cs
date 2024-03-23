@@ -30,7 +30,6 @@ public class MoveCar : MonoBehaviour
 
     private void MoveWheels()
     {
-        Debug.Log("Wheels moving!");
         LeftWheel.motorTorque = 40f;
         RightWheel.motorTorque = 40f;
     }

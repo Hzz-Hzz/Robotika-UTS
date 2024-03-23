@@ -28,7 +28,7 @@ public class TranslationToCartesiusDecorator : IContourPointTransformationDecora
             return null;
 
         var imageWidth = contourList.sourceImageWidth;
-        var imageHeight = contourList.sourceImageWidth;
+        var imageHeight = contourList.sourceImageHeight;
 
         var x = pixel.X - imageWidth / 2.0;
         var y = imageHeight - pixel.Y;
