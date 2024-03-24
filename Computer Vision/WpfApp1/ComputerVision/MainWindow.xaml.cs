@@ -31,7 +31,7 @@ namespace WpfApp1
         {
             InitializeComponent();
             viewModel = new ViewModelVisualServer();
-            this.DataContext = viewModel;
+            DataContext = viewModel;
             viewModel.start();
         }
 

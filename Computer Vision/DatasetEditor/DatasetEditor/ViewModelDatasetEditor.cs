@@ -146,19 +146,6 @@ public class ViewModelDatasetEditor : INotifyPropertyChanged
     }
 
 
-
-    void setStatusToWaitingForClient()
-    {
-        status = "Status: Waiting for client (Unity project) to connect";
-        OnPropertyChanged("status");
-    }
-    void setStatusToClientConnected()
-    {
-        status = "Status: client connected";
-        OnPropertyChanged("status");
-    }
-
-
     private void OnPropertyChanged(string propertyName){
         var handler = PropertyChanged;
         if (handler != null)

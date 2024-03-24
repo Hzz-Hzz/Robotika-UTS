@@ -1,6 +1,6 @@
 using WpfApp1;
 
-namespace DataFrameGenerator.TrainingDataExtractStrategy;
+namespace ImageProcessingLogic.TrainingDataExtractStrategy;
 
 public interface IContourPointOrderingStrategy
 {

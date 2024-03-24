@@ -1,10 +1,8 @@
 using System.ComponentModel.DataAnnotations;
-using System.Net.Mime;
-using System.Numerics;
 using MathNet.Numerics.Interpolation;
 using WpfApp1;
 
-namespace DataFrameGenerator.TrainingDataExtractStrategy;
+namespace ImageProcessingLogic.TrainingDataExtractStrategy;
 
 public class CubicSplineInterpScalingDecorator : IContourPointTransformationDecorator
 {
@@ -22,9 +20,7 @@ public class CubicSplineInterpScalingDecorator : IContourPointTransformationDeco
         CubicSpline.InterpolatePchipSorted(y_pixel, y_actual);
 
     static CubicSplineInterpScalingDecorator() { max_y_pixel = y_pixel.Max(); }
-
-
-    private IContourPointTransformationDecorator? _decorated;
+    public IContourPointTransformationDecorator? _decorated { get; set; }
 
 
     public CubicSplineInterpScalingDecorator(IContourPointTransformationDecorator? decorated=null) {
@@ -32,36 +28,21 @@ public class CubicSplineInterpScalingDecorator : IContourPointTransformationDeco
     }
 
 
-    public ContourPoint? applyTransformation(
-        ContourList contourList, ContourPoint? pixel, bool convertForwardBackwardLink=true
-    ) {
-        pixel = _applyTransformation(contourList, pixel, convertForwardBackwardLink);
-        if (_decorated == null)
-            return pixel;
-        return _decorated.applyTransformation(contourList, pixel, convertForwardBackwardLink);
-    }
-
-
 
 
     public ContourPoint _applyTransformation(
-        ContourList _, ContourPoint? pixel, bool convertForwardBackwardLink=true
+        ContourList _, ContourPoint? point
     ) {
-        if (pixel == null)
+        if (point == null)
             return null;
 
-        var y = yPixelToYActual(pixel.Y);
-        var x = xPixelToXActual(pixel.X, pixel.Y);
-        var area = pixel.area;  // idk how to convert this. TODO
+        var y = yPixelToYActual(point.Y);
+        var x = xPixelToXActual(point.X, point.Y);
+        var area = point.area;  // idk how to convert this. TODO
         ContourPoint? link = null;
         ContourPoint? backwardLink = null;
-        if (convertForwardBackwardLink) {
-            link = _applyTransformation(_, pixel.link, false);
-            backwardLink = _applyTransformation(_, pixel.backwardLink, false);
-        }
 
-        var ret = new ContourPoint(x, y, area, link);
-        ret.backwardLink = backwardLink;
+        var ret = new ContourPoint(x, y, area, null);
         return ret;
     }
 

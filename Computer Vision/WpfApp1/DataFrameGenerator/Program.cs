@@ -2,8 +2,8 @@
 
 using System.Globalization;
 using DataFrameGenerator;
-using DataFrameGenerator.TrainingDataExtractStrategy;
 using DatasetEditor.model;
+using ImageProcessingLogic.TrainingDataExtractStrategy;
 using Microsoft.Data.Analysis;
 using Microsoft.ML;
 using Newtonsoft.Json;

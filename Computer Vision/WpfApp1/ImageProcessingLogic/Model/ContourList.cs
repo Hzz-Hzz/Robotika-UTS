@@ -19,12 +19,12 @@ public class ContourList
     public int sourceImageWidth => _sourceImageWidth;
     public int sourceImageHeight => _sourceImageHeight;
 
-    private VectorOfVectorOfPoint rawContours;
+    private VectorOfVectorOfPoint? rawContours;
     private List<ContourPoint> _contours;
     public List<Polygon>? boundariesNotToIntersectWith;
 
     public List<ContourPoint> contours => _contours;
-    public ILinkScoreCalculation linkScoreCalculation;
+    public ILinkScoreCalculation? linkScoreCalculation;
     public double heightPerWidthAspectRatio => _sourceImageHeight / _sourceImageWidth;
 
     private int halfWidth => _sourceImageWidth / 2;
@@ -39,7 +39,23 @@ public class ContourList
         initializeContourList();
     }
 
+    public ContourList(List<ContourPoint> contourPoints, int sourceImageWidth, int sourceImageHeight) {
+        this.linkScoreCalculation = null;
+        this.rawContours = null;
+        this._sourceImageWidth = sourceImageWidth;
+        this._sourceImageHeight = sourceImageHeight;
+        _contours = contourPoints;
+    }
+
+
     private void initializeContourList() {
+        if (this.rawContours == null)
+            // I know it's a bad design. this function and initializeContourLinks should be separated to other class, or to a static method
+            throw new InvalidDataException("rawContours should not be null when calling this");
+        if (this.linkScoreCalculation == null)
+            // I know it's a bad design. this function and initializeContourLinks should be separated to other class, or to a static method
+            throw new InvalidDataException("linkScoreCalculation should not be null when calling this");
+
         for (int i = 0; i < this.rawContours.Size; i++) {
             var contour = ContourPoint.fromVectorOfPoint(rawContours[i]);
             if (contour == null)
@@ -48,6 +64,7 @@ public class ContourList
                 continue;
             _contours.Add(contour);
         }
+
         _contours.Sort((a, b) =>  linkScoreCalculation.nodePrioritySorter(this, a, b));
     }
 
@@ -92,6 +109,10 @@ public class ContourList
 
 
     private ContourPoint? updateLink(ContourPoint toBeUpdated) {
+        if (this.linkScoreCalculation == null)
+            // I know it's a bad design. this function and initializeContourLinks should be separated to other class, or to a static method
+            throw new InvalidDataException("linkScoreCalculation should not be null when calling this");
+
         var closest = new Tuple<double, ContourPoint?>(Double.PositiveInfinity, null);
         foreach (var nextLinkCandidate in _contours) {
             if (nextLinkCandidate == toBeUpdated)
@@ -103,7 +124,7 @@ public class ContourList
             if (!linkScoreCalculation.isHardConstraintSatisfied(this, toBeUpdated, nextLinkCandidate))
                 continue;
             if (boundariesNotToIntersectWith != null
-                && Polygon.checkIfIntersectWithAnyPolygon(boundariesNotToIntersectWith, toBeUpdated.point, nextLinkCandidate.point))
+                && Polygon.checkIfIntersectWithAnyPolygon(boundariesNotToIntersectWith, toBeUpdated.vector2, nextLinkCandidate.vector2))
                 continue;
 
             var score = linkScoreCalculation.getScore(toBeUpdated, nextLinkCandidate);

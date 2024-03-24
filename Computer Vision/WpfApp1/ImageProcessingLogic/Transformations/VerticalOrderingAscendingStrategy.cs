@@ -1,6 +1,6 @@
 using WpfApp1;
 
-namespace DataFrameGenerator.TrainingDataExtractStrategy;
+namespace ImageProcessingLogic.TrainingDataExtractStrategy;
 
 
 // ascending could mean bottom-to-top, or could also mean top-to-bottom, depends on

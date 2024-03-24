@@ -14,7 +14,8 @@ public class PredictorModelMain
         var data = csvDeserializer<DataModel>(File.ReadAllText("../../../../../../dataset/df.csv"));
         split = splitTrainTest(data, testPercentage);
 
-        var predictor = new RegressionPredictor<DataModel, float>("angle", context: context);
+        var predictor = new RegressionPredictor<DataModel, float>("angle", context: context,
+            excludeColumn: new []{"angle", "speed"});
         predictor.appendAll(split.Item1);
         predictor.fit();
         return predictor;

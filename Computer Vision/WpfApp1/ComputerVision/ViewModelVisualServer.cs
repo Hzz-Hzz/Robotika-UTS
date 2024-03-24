@@ -15,6 +15,7 @@ using System.Windows.Threading;
 using System.Xml.XPath;
 using Emgu.CV;
 using Emgu.CV.Cuda;
+using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using PredictorModel;
 
@@ -24,7 +25,7 @@ public class ViewModelVisualServer : INotifyPropertyChanged
 {
 
 
-    public event PropertyChangedEventHandler PropertyChanged;
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     public ImageSource imageSourceOriginal {
         get { return ImageSourceOriginal; }
@@ -36,12 +37,17 @@ public class ViewModelVisualServer : INotifyPropertyChanged
     public ImageSource imageSourceRoadMain {
         get { return ImageSourceRoadMain; }
     }
+    public ImageSource imageSourceSurroundingMap {
+        get { return ImageSourceSurroundingMap; }
+    }
+
 
     public string anglePrediction { get; set; }
 
     private BitmapImage ___imageSourceOriginal;
     private BitmapImage ___imageSourceRoadEdge;
     private BitmapImage ___imageSourceRoadMain;
+    private BitmapImage ___imageSourceSurroundingMap;
 
     public BitmapImage ImageSourceOriginal {
         get { return ___imageSourceOriginal; }
@@ -63,6 +69,13 @@ public class ViewModelVisualServer : INotifyPropertyChanged
         set {
             ___imageSourceRoadMain = value;
             PropertyChanged(this, new PropertyChangedEventArgs("imageSourceRoadMain"));
+        }
+    }
+    public BitmapImage ImageSourceSurroundingMap {
+        get { return ___imageSourceSurroundingMap; }
+        set {
+            ___imageSourceSurroundingMap = value;
+            PropertyChanged(this, new PropertyChangedEventArgs("imageSourceSurroundingMap"));
         }
     }
 
@@ -89,72 +102,84 @@ public class ViewModelVisualServer : INotifyPropertyChanged
 
     private RegressionPredictor<DataModel, float> _predictor;
 
-    private void ServerThread_Read()
-    {
-        NamedPipeServerStream namedPipeServerStream =
-            new NamedPipeServerStream("RobotikaNuelValen", PipeDirection.InOut);
+    private void ServerThread_Read() {
+        NamedPipeServerStream namedPipeServerStream = new NamedPipeServerStream("RobotikaNuelValen", PipeDirection.InOut);
         var stoppingCriteria = () => !namedPipeServerStream.IsConnected;
 
-        while (true)
-        {
-            try
-            {
+        while (true) {
+            try {
                 setStatusToWaitingForClient();
                 namedPipeServerStream.WaitForConnection();
                 setStatusToClientConnected();
 
                 var reader = new BinaryReader(namedPipeServerStream);
-                // var writer = new StreamWriter(namedPipeServerStream); ;
-                while (true)
-                {
+                while (true) {
                     var sizeRaw = blockingReadExactly(reader, 4, stoppingCriteria);
-                    // namedPipeServerStream.Read(sizeRaw);
                     var size = BitConverter.ToInt32(sizeRaw);
-
                     var imageByte = blockingReadExactly(reader, size, stoppingCriteria);
-                    var converter = new ByteToCroppedImageFactory();
-                    var image = converter.convert(imageByte);
 
-
-                    try {
-                        var origImage = ImageUtility.BitmapToImageSource(image.ToBitmap());
-
-                        var resultingMainRoadImage = _mainRoadImageProcessing.processImage(image);
-                        var contourInformation = _roadEdgeImageProcessing.getContourList(image,
-                            _mainRoadImageProcessing.resultingPolygons, true);
-                        var resultingRoadEdgeImage = _roadEdgeImageProcessing.getImageFromContourInformation(contourInformation, resultingMainRoadImage);
-                        contourInformation.Item2.Dispose();
-
-                        var predictionInput = DataModel.fromContourList(contourInformation.Item1);
-                        var result = _predictor.predict(predictionInput);
-                        anglePrediction = $"{result}";
-                        PropertyChanged(this, new PropertyChangedEventArgs("anglePrediction"));
-
-                        origImage.Freeze();
-                        resultingRoadEdgeImage.Freeze();
-                        // resultingMainRoadImage.Freeze();
-                        ImageSourceOriginal = origImage;
-                        ImageSourceRoadEdge = resultingRoadEdgeImage;
-                        // ImageSourceRoadMain = resultingMainRoadImage;
+                    if (PropertyChanged == null) {
+                        Console.WriteLine("Warning: PropertyChanged is null");
+                        continue;
                     }
-                    catch (ArgumentException e) {
-                        if (e.Message.Contains("Parameter is not valid")) {
-                            Trace.TraceWarning(e.Message);
-                            return;
-                        }
-                        throw;
-                    }
+                    processImage(imageByte);
                 }
             }
-            catch (OperationCanceledException e)
-            {
-                setStatusToWaitingForClient();
-            }
-            catch (IOException e)
-            {
+            catch (OperationCanceledException e) { setStatusToWaitingForClient(); }
+            catch (IOException e) {
                 setStatusToWaitingForClient();
                 namedPipeServerStream.Disconnect();
             }
+        }
+    }
+
+    private void processImage(byte[] imageByte) {
+        var converter = new ByteToCroppedImageFactory();
+        var image = converter.convert(imageByte);
+
+        try {
+            updateOriginalImage(image);
+            var contourList = updateProcessedImageAndGetContourList(image);
+            updateSurrondingMap(contourList, image.Height, image.Width);
+        }
+        catch (ArgumentException e) {
+            if (e.Message.Contains("Parameter is not valid")) {
+                Trace.TraceWarning(e.Message);
+                return;
+            }
+            throw;
+        }
+    }
+
+    private void updateOriginalImage(Image<Bgr, byte> image) {
+        var origImage = ImageUtility.BitmapToImageSource(image.ToBitmap());
+        origImage.Freeze();
+        ImageSourceOriginal = origImage;
+    }
+
+    private ContourList updateProcessedImageAndGetContourList(Image<Bgr, byte> image) {
+        var resultingMainRoadImage = _mainRoadImageProcessing.processImage(image);
+        var contourInformation = _roadEdgeImageProcessing.getContourList(image,
+            _mainRoadImageProcessing.resultingPolygons, true);
+        var resultingRoadEdgeImage = _roadEdgeImageProcessing.getImageFromContourInformation(contourInformation, resultingMainRoadImage);
+        contourInformation.Item2!.Dispose();
+
+        resultingRoadEdgeImage.Freeze();
+        ImageSourceRoadEdge = resultingRoadEdgeImage;
+
+        return contourInformation.Item1;
+    }
+    private void updateSurrondingMap(ContourList contourList, int rows, int cols) {
+        var surroundingMap = SurroundingMap.fromCameraContourList(contourList);
+        surroundingMap.updateIntersectionPoints();
+
+        using (var mat = new Mat(rows, cols, DepthType.Cv8U, 3)) {
+            mat.SetTo(new MCvScalar(0, 0, 0));
+            surroundingMap.drawOnMat(mat);
+
+            var bitmap = ImageUtility.BitmapToImageSource(mat.ToBitmap());
+            bitmap.Freeze();
+            ImageSourceSurroundingMap = bitmap;
         }
     }
 

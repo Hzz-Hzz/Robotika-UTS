@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Numerics;
-using DataFrameGenerator.TrainingDataExtractStrategy;
 using DatasetEditor.model;
+using ImageProcessingLogic.TrainingDataExtractStrategy;
 using Microsoft.Data.Analysis;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;

@@ -1,5 +1,5 @@
 using System.Numerics;
-using DataFrameGenerator.TrainingDataExtractStrategy;
+using ImageProcessingLogic.TrainingDataExtractStrategy;
 using Microsoft.ML.Data;
 using WpfApp1;
 
@@ -70,7 +70,7 @@ public class DataModel
             xdir = 0;  ydir = 0;   len = 0;
             return;
         }
-        point = _transformationDecorator.applyTransformation(contourList, point, true);
+        point = _transformationDecorator.applyTransformationForwardBackwardAsWell(contourList, point);
         x = (float)point.X;
         y = (float)point.Y;
         var direction = point.link==null? new Vector2(0,0) : (point.link.vector2 - point.vector2);
