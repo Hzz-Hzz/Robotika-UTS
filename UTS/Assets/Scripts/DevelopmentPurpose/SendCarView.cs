@@ -3,8 +3,10 @@ using System.IO;
 using System.IO.Pipes;
 using System.Threading;
 using JetBrains.Annotations;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 [InitializeOnLoad]
 public class SendCarView : MonoBehaviour
@@ -94,9 +96,12 @@ public class SendCarView : MonoBehaviour
 
     void sendSceneToServer(bool isPaused) {
         try {
-            if (cameraTexture2D != null)
-                Destroy(cameraTexture2D);
-            cameraTexture2D = CamCapture();
+            // if (cameraTexture2D != null) {
+                // Resources.UnloadAsset(cameraTexture2D);
+                // Object.DestroyImmediate(cameraTexture2D, allowDestroyingAssets: true);
+                // DestroyImmediate(cameraTexture2D, allowDestroyingAssets: true);
+            // }
+            cameraTexture2D = CamCapture(cameraTexture2D);
             cameraSceneBytesData = cameraTexture2D.EncodeToPNG();
         }
         catch (Exception e) when (e is UnityException || e is InvalidOperationException) {
@@ -114,7 +119,8 @@ public class SendCarView : MonoBehaviour
                 reconnectNamedPipeAsync();
             }
 
-            if (cameraSceneBytesData != null) {
+            if (cameraSceneBytesData != null && clientStreamWriter != null) {
+                Debug.Log("Writing to namedpipeline");
                 clientStreamWriter?.Write(cameraSceneBytesData.Length);
                 clientStreamWriter?.Write(cameraSceneBytesData);
                 clientStreamWriter?.Flush();
@@ -162,7 +168,10 @@ public class SendCarView : MonoBehaviour
     }
 
 
-    Texture2D CamCapture()
+    /**
+     *  reuseTexture2D: increase efficiency so that we're not destroy & re-creating multiple times
+     */
+    Texture2D CamCapture([CanBeNull] Texture2D reuseTexture2D = null)
     {
         var height = targetCameraGameobject.pixelHeight;
         var width = targetCameraGameobject.pixelWidth;
@@ -177,15 +186,24 @@ public class SendCarView : MonoBehaviour
         var oldActiveRenderTexture = RenderTexture.active;
 
         targetCameraGameobject.targetTexture = tempRT;
-        RenderTexture.active = tempRT;
+        if (tempRT != null) RenderTexture.active = tempRT;
         targetCameraGameobject.Render();
 
-        Texture2D image = new Texture2D(width, height, TextureFormat.ARGB32, false, true);
+        Texture2D? image = reuseTexture2D;
+        if (image == null || image.IsDestroyed()) {
+            Debug.Log("Creating new Texture2D");
+            image = new Texture2D(width, height, TextureFormat.ARGB32, false, true);
+        }else {
+            image.Reinitialize(width, height, TextureFormat.ARGB32, false);
+        }
+        image.hideFlags = HideFlags.HideAndDontSave;
         image.ReadPixels(new Rect(0, 0, image.width, image.height), 0, 0);
         image.Apply();
 
         RenderTexture.active = oldActiveRenderTexture;
         targetCameraGameobject.targetTexture = oldCameraTargetTexture;
+        tempRT.DiscardContents();
+        DestroyImmediate(tempRT, allowDestroyingAssets: true);
 
         return image;
     }
