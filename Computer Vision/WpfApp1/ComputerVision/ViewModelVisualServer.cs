@@ -158,10 +158,14 @@ public class ViewModelVisualServer : INotifyPropertyChanged
     }
 
     private ContourList updateProcessedImageAndGetContourList(Image<Bgr, byte> image) {
-        var resultingMainRoadImage = _mainRoadImageProcessing.processImage(image);
+        var resultingMainRoadImage = _mainRoadImageProcessing.processImage(image, false);
+        var mainRoadBitmap = ImageUtility.BitmapToImageSource(resultingMainRoadImage.Item1.ToBitmap());
+        mainRoadBitmap.Freeze();
+        ImageSourceRoadMain = mainRoadBitmap;
+
         var contourInformation = _roadEdgeImageProcessing.getContourList(image,
             _mainRoadImageProcessing.resultingPolygons, true);
-        var resultingRoadEdgeImage = _roadEdgeImageProcessing.getImageFromContourInformation(contourInformation, resultingMainRoadImage);
+        var resultingRoadEdgeImage = _roadEdgeImageProcessing.getImageFromContourInformation(contourInformation, resultingMainRoadImage.Item2);
         contourInformation.Item2!.Dispose();
 
         resultingRoadEdgeImage.Freeze();

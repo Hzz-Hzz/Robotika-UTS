@@ -23,7 +23,7 @@ public class RoadEdgeImageProcessing
 
 
     public BitmapImage processImageAsBitmap(Image<Bgr, byte> image) {
-        var mainRoadMat = _mainRoadImageProcessing.processImage(image);
+        var mainRoadMat = _mainRoadImageProcessing.processImage(image).Item2;
         var contourListInfo = getContourList(image, _mainRoadImageProcessing.resultingPolygons,
             true);
         try {

@@ -80,7 +80,7 @@ public static class ContourListExtension
             if (endLineA == null)
                 continue;
 
-            var intersectionPoint = RayCastingUtility.getIntersectionPoint(startLineA, endLineB, startLineB, endLineB);
+            var intersectionPoint = RayCastingUtility.getIntersectionPoint(startLineA, endLineA.Value, startLineB, endLineB);
             if (intersectionPoint != null)
                 ret.Add(new ContourPoint(intersectionPoint.Value.X, intersectionPoint.Value.Y, -1, null));
         }

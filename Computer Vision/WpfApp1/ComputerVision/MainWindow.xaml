@@ -27,9 +27,10 @@
         </UniformGrid>
         <UniformGrid Grid.Row="1" Columns="2">
             <Image Grid.Row="0" Name="processedImageRoadEdge" Source="{Binding imageSourceRoadEdge}" MouseMove="UIElement_OnMouseMove"/>
-            <Image Grid.Row="0" Grid.Column="2" Name="processedImageRoadMain" Source="{Binding imageSourceSurroundingMap}" MouseMove="UIElement_OnMouseMove" />
+            <Image Grid.Row="0" Grid.Column="1" Name="processedImageRoadMain" Source="{Binding imageSourceSurroundingMap}" MouseMove="UIElement_OnMouseMove" />
 
             <Image Grid.Row="1" Name="originalImage" Source="{Binding imageSourceOriginal}" MouseMove="UIElement_OnMouseMove" />
+            <Image Grid.Row="1" Grid.Column="1" Source="{Binding imageSourceRoadMain}" MouseMove="UIElement_OnMouseMove" />
         </UniformGrid>
 
     </Grid>

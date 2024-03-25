@@ -13,11 +13,11 @@ public interface IContourPointTransformationDecorator
 
     // convertForwardBackwardLink seems like a code smell (tight coupling)
     public ContourPoint? applyTransformation(ContourList originalContourList, ContourPoint? pixel) {
-        pixel = _applyTransformation(originalContourList, pixel);
+        var transformedContourPoint = _applyTransformation(originalContourList, pixel);
 
         if (_decorated == null)
-            return pixel;
-        return _decorated.applyTransformation(originalContourList, pixel);
+            return transformedContourPoint;
+        return _decorated.applyTransformation(originalContourList, transformedContourPoint);
     }
 
     protected ContourPoint? _applyTransformation(ContourList originalContourList, ContourPoint? point);

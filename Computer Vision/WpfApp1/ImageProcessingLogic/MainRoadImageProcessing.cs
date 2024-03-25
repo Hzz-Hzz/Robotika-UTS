@@ -22,23 +22,26 @@ public class MainRoadImageProcessing
 
     public BitmapImage processImageAsBitmap(Image<Bgr, byte> image) {
         using (var gpuMat = imageToGpuMat(image))
-            return ImageUtility.BitmapToImageSource(processImage(gpuMat).ToBitmap());
+            return ImageUtility.BitmapToImageSource(processImage(gpuMat).Item2.ToBitmap());
     }
-    public Mat processImage(Image<Bgr, byte> image) {
+    public Tuple<Mat, Mat> processImage(Image<Bgr, byte> image, bool returnMatOfBitmask=false) {
         using (var gpuMat = imageToGpuMat(image))
-            return processImage(gpuMat);
+            return processImage(gpuMat, returnMatOfBitmask);
     }
-    public Mat processImage(GpuMat gpuMat)
+    public Tuple<Mat, Mat> processImage(GpuMat gpuMat, bool returnMatOfBitmask=false)
     {
-        using (var newGpuMat = filterByDistanceWithTargetColor(gpuMat, 130, 130, 130, 200))
-        using (var newGpuMat2 = filterByDistanceWithTargetColor(gpuMat, 205, 205, 205, 220))
-        using (var newGpuMat3 = filterByDistanceWithTargetColor(gpuMat, 50, 60, 70, 220))
+        using (var newGpuMat = filterByDistanceWithTargetColor(gpuMat, 130, 130, 130, 230))
+        using (var newGpuMat2 = filterByDistanceWithTargetColor(gpuMat, 205, 205, 205, 230))
+        using (var newGpuMat3 = filterByDistanceWithTargetColor(gpuMat, 50, 60, 70, 230))
         using (var resultingMat = new Mat()) {
             CudaInvoke.Max(newGpuMat, newGpuMat2, newGpuMat);
             CudaInvoke.Max(newGpuMat, newGpuMat3, newGpuMat);
             newGpuMat.Download(resultingMat);
 
-            return contourProcessor(resultingMat);
+            var ret1 = new Mat();
+            resultingMat.CopyTo(ret1);
+            var ret2 = contourProcessor(resultingMat);
+            return new Tuple<Mat, Mat>(ret1, ret2);
         }
     }
 
