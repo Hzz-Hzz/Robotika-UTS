@@ -19,7 +19,7 @@ public interface IInterprocessCommunication
 
     public Task connect();
 
-    public Task write(byte[] bytes);
+    public Task<bool> write(byte[] bytes, bool autoReconnect=true);
 
     public void dispose();
 

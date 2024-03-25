@@ -26,12 +26,14 @@ public class InterprocessCommunicationServer: InterprocessCommunicationBase
 
 
     public override async Task connect() {
+        OnLog(this, "Reinitializing...");
+        
         tryDisconnect();
         dispose();
         initializePipeStream();
     }
 
-    public override  Task write(byte[] bytes) {
+    public override Task<bool> write(byte[] bytes, bool autoReconnect=true) {
         throw new NotImplementedException();
     }
 
@@ -58,9 +60,6 @@ public class InterprocessCommunicationServer: InterprocessCommunicationBase
             });
         }
     }
-
-
-
 
 
 
