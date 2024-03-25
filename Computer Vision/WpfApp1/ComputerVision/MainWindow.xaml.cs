@@ -26,14 +26,14 @@ namespace WpfApp1
     public partial class MainWindow : Window
     {
         private ViewModelVisualServer? viewModel;
-        private ClientRequestHandler? clientHandler;
+        private Temp? clientHandler;
 
         public MainWindow()
         {
             InitializeComponent();
             viewModel = new ViewModelVisualServer();
             DataContext = viewModel;
-            clientHandler = new ClientRequestHandler(viewModel);
+            clientHandler = new Temp(viewModel);
             clientHandler.startListeningAsync();
         }
 
