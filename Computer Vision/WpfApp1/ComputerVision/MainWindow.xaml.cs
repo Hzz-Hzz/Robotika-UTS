@@ -26,13 +26,15 @@ namespace WpfApp1
     public partial class MainWindow : Window
     {
         private ViewModelVisualServer? viewModel;
+        private ClientRequestHandler? clientHandler;
 
         public MainWindow()
         {
             InitializeComponent();
             viewModel = new ViewModelVisualServer();
             DataContext = viewModel;
-            viewModel.start();
+            clientHandler = new ClientRequestHandler(viewModel);
+            clientHandler.startListeningAsync();
         }
 
         private SettingsPersistenceLogic settingsPersistence = new("settings.xml");

@@ -86,54 +86,14 @@ public class ViewModelVisualServer : INotifyPropertyChanged
     private MainRoadImageProcessing _mainRoadImageProcessing = new ();
 
 
-    public ViewModelVisualServer()
-    {
-    }
+    public ViewModelVisualServer() {}
 
 
-
-
-    public void start()
-    {
-        Thread thread = new Thread(ServerThread_Read);
-        thread.Start();
-        _predictor = PredictorModelMain.getPredictor(out _, 0.0f);
-    }
 
     private RegressionPredictor<DataModel, float> _predictor;
 
-    private void ServerThread_Read() {
-        NamedPipeServerStream namedPipeServerStream = new NamedPipeServerStream("RobotikaNuelValen", PipeDirection.InOut);
-        var stoppingCriteria = () => !namedPipeServerStream.IsConnected;
 
-        while (true) {
-            try {
-                setStatusToWaitingForClient();
-                namedPipeServerStream.WaitForConnection();
-                setStatusToClientConnected();
-
-                var reader = new BinaryReader(namedPipeServerStream);
-                while (true) {
-                    var sizeRaw = blockingReadExactly(reader, 4, stoppingCriteria);
-                    var size = BitConverter.ToInt32(sizeRaw);
-                    var imageByte = blockingReadExactly(reader, size, stoppingCriteria);
-
-                    if (PropertyChanged == null) {
-                        Console.WriteLine("Warning: PropertyChanged is null");
-                        continue;
-                    }
-                    processImage(imageByte);
-                }
-            }
-            catch (OperationCanceledException e) { setStatusToWaitingForClient(); }
-            catch (IOException e) {
-                setStatusToWaitingForClient();
-                namedPipeServerStream.Disconnect();
-            }
-        }
-    }
-
-    private void processImage(byte[] imageByte) {
+    public void processImage(byte[] imageByte) {
         var converter = new ByteToCroppedImageFactory();
         var image = converter.convert(imageByte);
 
@@ -189,47 +149,17 @@ public class ViewModelVisualServer : INotifyPropertyChanged
 
 
 
-    private byte[] blockingReadExactly(BinaryReader streamReader, int bytesCount, Func<bool> stopFlag)
-    {
-        List<byte[]> resultingArrays = new();
-
-        while (bytesCount > 0)
-        {
-            var result = streamReader.ReadBytes(bytesCount);
-            bytesCount -= result.Length;
-            if (result.Length != 0)
-                resultingArrays.Add(result);
-            if (stopFlag.Invoke())
-                throw new OperationCanceledException();
-            Thread.Sleep(50);
-        }
-        if (resultingArrays.Count == 1)
-            return resultingArrays[0];
-        return ConcatArrays(resultingArrays);
-    }
-
-    public static T[] ConcatArrays<T>(List<T[]> p)
-    {
-        var position = 0;
-        var outputArray = new T[p.Sum(a => a.Length)];
-        foreach (var curr in p)
-        {
-            Array.Copy(curr, 0, outputArray, position, curr.Length);
-            position += curr.Length;
-        }
-        return outputArray;
-    }
-
-
-
-
-
-    void setStatusToWaitingForClient()
+    public void setStatusToWaitingForClient()
     {
         status = "Status: Waiting for client (Unity project) to connect";
         OnPropertyChanged("status");
     }
-    void setStatusToClientConnected()
+    public void setStatusToDisconnected()
+    {
+        status = "Status: Disconnected";
+        OnPropertyChanged("status");
+    }
+    public void setStatusToClientConnected()
     {
         status = "Status: client connected";
         OnPropertyChanged("status");

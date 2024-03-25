@@ -18,7 +18,6 @@ public class SendCarView : MonoBehaviour
     private Camera targetCameraGameobject;
     private System.Diagnostics.Stopwatch _stopwatch = new();
     private System.Diagnostics.Stopwatch _saveDatasetStopwatch = new();
-    private NamedPipeClientStream _clientNamedPipe;
     private StreamReader clientStreamReader;
     private BinaryWriter clientStreamWriter;
 
@@ -27,32 +26,14 @@ public class SendCarView : MonoBehaviour
         targetCameraGameobject = GetComponent<Camera>();
         _stopwatch.Start();
         _saveDatasetStopwatch.Start();
-        reconnectNamedPipeAsync();
         EditorApplication.pauseStateChanged += HandleOnPlayModeChanged;
+
+        var handler = CommunicationHandler.handler;
+        handler.startListeningAsync();
     }
 
-    void reconnectNamedPipeAsync()
-    {
-        Thread startAsync = new Thread(reconnectNamedPipe);
-        startAsync.Start();
-    }
 
-    void reconnectNamedPipe()
-    {
-        if (_clientNamedPipe != null)
-        {
-            _clientNamedPipe.Close();
-            _clientNamedPipe.Dispose();
-            clientStreamReader = null;
-            clientStreamWriter = null;
-        }
-        Debug.Log("Connecting...");
-        _clientNamedPipe = new("RobotikaNuelValen");
-        _clientNamedPipe.Connect();
-        clientStreamReader = new StreamReader(_clientNamedPipe);
-        clientStreamWriter = new BinaryWriter(_clientNamedPipe);
-        Debug.Log("Connected to the server");
-    }
+
 
 
     private bool? onPauseThreadShouldRun = null;
@@ -96,11 +77,6 @@ public class SendCarView : MonoBehaviour
 
     void sendSceneToServer(bool isPaused) {
         try {
-            // if (cameraTexture2D != null) {
-                // Resources.UnloadAsset(cameraTexture2D);
-                // Object.DestroyImmediate(cameraTexture2D, allowDestroyingAssets: true);
-                // DestroyImmediate(cameraTexture2D, allowDestroyingAssets: true);
-            // }
             cameraTexture2D = CamCapture(cameraTexture2D);
             cameraSceneBytesData = cameraTexture2D.EncodeToPNG();
         }
@@ -108,27 +84,9 @@ public class SendCarView : MonoBehaviour
             if (!e.Message.Contains("main thread")) throw;
         }
 
-        try {
-            if (cameraSceneBytesData != null && !isPaused)
-                saveDatasetTo(cameraSceneBytesData);
-            if (clientStreamWriter == null)
-                return;
-            if (!_clientNamedPipe.IsConnected){
-                // was connected but now disconnected
-                Debug.Log("Disconnected...");
-                reconnectNamedPipeAsync();
-            }
-
-            if (cameraSceneBytesData != null && clientStreamWriter != null) {
-                Debug.Log("Writing to namedpipeline");
-                clientStreamWriter?.Write(cameraSceneBytesData.Length);
-                clientStreamWriter?.Write(cameraSceneBytesData);
-                clientStreamWriter?.Flush();
-            }
-        } catch (Exception e) when (e is IOException || e is ObjectDisposedException) {
-            if (e.Message.Contains("Pipe is broken")) return;
-            if (e.Message.Contains("closed pipe")) return;
-            throw;
+        if (cameraSceneBytesData != null && !isPaused) {
+            saveDatasetTo(cameraSceneBytesData);
+            CommunicationHandler.handler.sendImage(cameraSceneBytesData);
         }
     }
 
@@ -209,9 +167,6 @@ public class SendCarView : MonoBehaviour
     }
 
     void OnApplicationQuit() {
-        if (_clientNamedPipe != null && _clientNamedPipe.IsConnected) {
-            _clientNamedPipe.Close();
-            _clientNamedPipe.Dispose();
-        }
+        CommunicationHandler.handler.stopListeningAndDisconnect();
     }
 }
