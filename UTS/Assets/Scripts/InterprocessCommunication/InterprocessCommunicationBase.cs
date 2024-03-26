@@ -92,7 +92,14 @@ public abstract class InterprocessCommunicationBase : IInterprocessCommunication
                 return;
             }
             throw;
-        }catch (TimeoutException e) {
+        } catch (InvalidOperationException e) {
+            if (e.Message.ToLower().Contains("pipe hasn't been connected yet")) {
+                await handler(e);
+                return;
+            }
+            throw;
+        }
+        catch (TimeoutException e) {
             await handler(e);
         }
     }
