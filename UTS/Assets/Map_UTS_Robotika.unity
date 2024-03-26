@@ -6466,9 +6466,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4a470296fe5de0449f3dcc4a031e472, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  saveDataset: 0
-  datasetFolderPath: H:\01_Kuliah\01_Dokumen\22 - Robotika\02 Tugas Unity\10 Persiapan
-    UTS\UTS template\dataset
+  ImageUpdated:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1001346104}
+        m_TargetAssemblyTypeName: InterprocessCommunication.RpcUnityEvent, Assembly-CSharp
+        m_MethodName: OnImageUpdated
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  maximumFPS: 20
+  keepRunningWhenEditorIsPaused: 1
 --- !u!1 &457118438
 GameObject:
   m_ObjectHideFlags: 0
@@ -13820,6 +13834,66 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 999249482}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1001346103
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1001346105}
+  - component: {fileID: 1001346104}
+  m_Layer: 0
+  m_Name: RpcMediator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1001346104
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1001346103}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22bea1964a1d4efa9a1ff9cfae98ebec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  AngleRecommendationReceived:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 2011142732}
+        m_TargetAssemblyTypeName: Actuators.CapsuleAngleRecommendationActuator, Assembly-CSharp
+        m_MethodName: OnReceiveAngleRecommendation
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  imageVersion: 0
+--- !u!4 &1001346105
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1001346103}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 3.8599522, y: 2.6701932, z: 14.553451}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 9
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1008178162
 GameObject:
   m_ObjectHideFlags: 0
@@ -26859,9 +26933,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4a470296fe5de0449f3dcc4a031e472, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  saveDataset: 0
-  datasetFolderPath: H:\01_Kuliah\01_Dokumen\22 - Robotika\02 Tugas Unity\10 Persiapan
-    UTS\UTS template\dataset
+  ImageUpdated:
+    m_PersistentCalls:
+      m_Calls: []
+  maximumFPS: 20
+  keepRunningWhenEditorIsPaused: 1
 --- !u!81 &1987958840
 AudioListener:
   m_ObjectHideFlags: 0
@@ -27202,6 +27278,7 @@ GameObject:
   - component: {fileID: 2011142728}
   - component: {fileID: 2011142729}
   - component: {fileID: 2011142731}
+  - component: {fileID: 2011142732}
   m_Layer: 0
   m_Name: Capsule
   m_TagString: Untagged
@@ -27339,9 +27416,21 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2011142723}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7ac209a0147e4540805ca25a868f9269, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &2011142732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2011142723}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ca914eb7b16465594218eab44ebdc0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1001 &2013686442

@@ -1,60 +1,61 @@
 using System;
 using System.IO;
 using System.Threading;
+using EventsEmitter.models;
 using JetBrains.Annotations;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Events;
+
+
+[System.Serializable]
+public class ImageUpdatedEvent : UnityEvent<ImageUpdatedEventArgs>
+{
+}
 
 [InitializeOnLoad]
 public class SendCarView : MonoBehaviour
 {
-    public bool saveDataset = false;
-    public string datasetFolderPath;
+    public ImageUpdatedEvent ImageUpdated;
+
+    public int maximumFPS = 20;
+    public bool keepRunningWhenEditorIsPaused = true;
 
 
     private Camera targetCameraGameobject;
     private System.Diagnostics.Stopwatch _stopwatch = new();
-    private System.Diagnostics.Stopwatch _saveDatasetStopwatch = new();
-    private StreamReader clientStreamReader;
-    private BinaryWriter clientStreamWriter;
-
-    private RpcFacade _rpcFacade;
 
     void Start()
     {
         targetCameraGameobject = GetComponent<Camera>();
         _stopwatch.Start();
-        _saveDatasetStopwatch.Start();
         EditorApplication.pauseStateChanged += HandleOnPlayModeChanged;
-
-        _rpcFacade = new RpcFacade();
-        _rpcFacade.startListening();
     }
 
 
-
-
-
-    private bool? onPauseThreadShouldRun = null;
+    private bool? is_OnPauseThread_running = null;
     private Thread _onPauseThread;
     void HandleOnPlayModeChanged(PauseState pauseState) {
-        // This allows us to restart the WPF application and having the image immediately displayed
+        if (!keepRunningWhenEditorIsPaused)
+            return;
+
+        // This allows us to restart the WPF application (server) and having the image immediately displayed
         // without having to unpause then re-pause.
         if (pauseState == PauseState.Paused) {
-            onPauseThreadShouldRun = true;
+            is_OnPauseThread_running = true;
             _onPauseThread = new Thread(UpdateContinously);
             _onPauseThread.Start();
         } else if (pauseState == PauseState.Unpaused && _onPauseThread != null) {
-            onPauseThreadShouldRun = false;
+            is_OnPauseThread_running = false;
         }
     }
     void UpdateContinously() {
-        while (onPauseThreadShouldRun ?? false) {
-            sendSceneToServerOrSaveDataset(true);
+        while (is_OnPauseThread_running ?? false) {
+            publishEvent(true);
             Thread.Sleep(100);
         }
-        onPauseThreadShouldRun = null;
+        is_OnPauseThread_running = null;
     }
 
 
@@ -62,69 +63,26 @@ public class SendCarView : MonoBehaviour
     private byte[] cameraSceneBytesData;
     void Update() {
 
-
-        if (onPauseThreadShouldRun != null)
+        if (is_OnPauseThread_running != null)
             return;
-        const int MaxFPS = 40;
-        if (_stopwatch.ElapsedMilliseconds < 1000 / MaxFPS)
+        if (_stopwatch.ElapsedMilliseconds < 1000 / maximumFPS)
             return;
         _stopwatch.Restart();
-
-        if (Input.GetKeyDown("p")) {
-            Console.WriteLine("keydown p");
-            saveDataset = !saveDataset;
-        }
-        sendSceneToServerOrSaveDataset(false);
+        publishEvent(false);
     }
 
-    void sendSceneToServerOrSaveDataset(bool isPaused) {
+    public void publishEvent(bool paused) {
         try {
             cameraTexture2D = CamCapture(cameraTexture2D);
             cameraSceneBytesData = cameraTexture2D.EncodeToPNG();
-            _ = _rpcFacade.getAngleRecommendation(cameraSceneBytesData);  // TODO
+            ImageUpdated?.Invoke(new ImageUpdatedEventArgs() {
+                imageData = cameraSceneBytesData,
+                paused = paused
+            });
         }
         catch (Exception e) when (e is UnityException || e is InvalidOperationException) {
             if (!e.Message.Contains("main thread")) throw;
         }
-
-        if (cameraSceneBytesData != null && !isPaused) {
-            saveDatasetTo(cameraSceneBytesData);
-        }
-    }
-
-    private void saveDatasetTo(byte[] byteData, [CanBeNull] string datasetFolderPath = null) {
-        const int MaxFPS = 2;
-        if (_saveDatasetStopwatch.ElapsedMilliseconds < 1000 / MaxFPS)
-            return;
-        _saveDatasetStopwatch.Restart();
-
-        datasetFolderPath = datasetFolderPath ?? this.datasetFolderPath;
-        if (!IsPathValidRootedLocal(this.datasetFolderPath)) {
-            Debug.LogError($"Invalid path datasetFolderPath, given: {datasetFolderPath}");
-            return;
-        }
-
-        if (!saveDataset) {
-            return;
-        }
-        Directory.CreateDirectory(datasetFolderPath);
-        var fileNumberLocation = Path.Join(datasetFolderPath, "-fileno");
-        int fileNumber = File.Exists(fileNumberLocation) ? Int32.Parse(File.ReadAllText(fileNumberLocation)) : 0;
-        var datasetFileName = Path.Join(datasetFolderPath, $"{fileNumber}.png");
-
-        Debug.Log($"Saving dataset {fileNumber}.png");
-        fileNumber++;
-        File.WriteAllText(fileNumberLocation, $"{fileNumber}");
-
-        using (var streamWriter = new FileStream(datasetFileName, FileMode.Create))
-        {
-            streamWriter.Write(byteData);
-        }
-    }
-    public bool IsPathValidRootedLocal(String pathString) {
-        Uri pathUri;
-        Boolean isValidUri = Uri.TryCreate(pathString, UriKind.Absolute, out pathUri);
-        return isValidUri && pathUri != null && pathUri.IsLoopback;
     }
 
 
@@ -135,8 +93,6 @@ public class SendCarView : MonoBehaviour
     {
         var height = targetCameraGameobject.pixelHeight;
         var width = targetCameraGameobject.pixelWidth;
-        //Debug.Assert(height > 400);
-        //Debug.Assert(width > 400);
         RenderTexture tempRT = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32)
         {
             antiAliasing = 4
@@ -166,9 +122,5 @@ public class SendCarView : MonoBehaviour
         DestroyImmediate(tempRT, allowDestroyingAssets: true);
 
         return image;
-    }
-
-    void OnApplicationQuit() {
-        _rpcFacade.stopListening();
     }
 }

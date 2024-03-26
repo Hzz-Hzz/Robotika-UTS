@@ -93,19 +93,23 @@ public class ViewModelVisualServer : INotifyPropertyChanged
     private RegressionPredictor<DataModel, float> _predictor;
 
 
-    public void processImage(byte[] imageByte) {
+
+    /**
+     * This returns tuples of (distance, recommended angle in rads)
+     */
+    public List<Tuple<float, double>>? processImage(byte[] imageByte) {
         var converter = new ByteToCroppedImageFactory();
         var image = converter.convert(imageByte);
 
         try {
             updateOriginalImage(image);
             var contourList = updateProcessedImageAndGetContourList(image);
-            updateSurrondingMap(contourList, image.Height, image.Width);
+            return updateSurrondingMap(contourList, image.Height, image.Width);
         }
         catch (ArgumentException e) {
             if (e.Message.Contains("Parameter is not valid")) {
                 Trace.TraceWarning(e.Message);
-                return;
+                return null;
             }
             throw;
         }
@@ -133,7 +137,11 @@ public class ViewModelVisualServer : INotifyPropertyChanged
 
         return contourInformation.Item1;
     }
-    private void updateSurrondingMap(ContourList contourList, int rows, int cols) {
+
+    /**
+     * This returns tuples of (distance, recommended angle in rads)
+     */
+    private List<Tuple<float, double>> updateSurrondingMap(ContourList contourList, int rows, int cols) {
         var surroundingMap = SurroundingMap.fromCameraContourList(contourList);
         surroundingMap.updateIntersectionPoints();
 
@@ -145,6 +153,8 @@ public class ViewModelVisualServer : INotifyPropertyChanged
             bitmap.Freeze();
             ImageSourceSurroundingMap = bitmap;
         }
+
+        return surroundingMap.getRecommendedIntersectionPoints();
     }
 
 

@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
 
+
+using AngleRecRet = System.Collections.Generic.List<System.Tuple<float, double>>;
 
 
 // facade to do Remote Procedural Call
@@ -20,14 +23,18 @@ public class RpcFacade
 
     }
 
-    [CanBeNull] private Task _getAngleRecommendationCachedResult;
-    public Task getAngleRecommendation(byte[] bytes) {
+
+
+    [CanBeNull] private AngleRecRet _getAngleRecommendationCachedResult;
+    [ItemCanBeNull]
+    public async Task<AngleRecRet> getAngleRecommendation(byte[] bytes) {
         if (_stopwatch.ElapsedMilliseconds < 1000 / 20 && _getAngleRecommendationCachedResult != null) // 20FPS cap
             return _getAngleRecommendationCachedResult;
         _stopwatch.Restart();
 
         _getAngleRecommendationCachedResult =
-            interprocessCommunication.call<NoReturn>(QueryCommandsEnum.GET_ANGLE_RECOMMENDATION, bytes);
+            await interprocessCommunication.call<AngleRecRet?>(
+                QueryCommandsEnum.GET_ANGLE_RECOMMENDATION, bytes);
         return _getAngleRecommendationCachedResult;
     }
 
@@ -55,7 +62,7 @@ public class RpcFacade
         _stopwatch.Start();
         Debug.Log("Call startListening()");
         interprocessCommunication.startListeningAsyncFireAndForgetButKeepException(
-            (e) => Debug.LogError((e.ToString())));
+            (e) => Debug.LogError((e?.ToString())));
     }
 
     public void stopListening() {

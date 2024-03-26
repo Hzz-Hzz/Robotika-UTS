@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
 using System.Threading;
@@ -16,8 +17,18 @@ public class RpcFacade
         interprocessCommunication.registerMethod(QueryCommandsEnum.GET_ANGLE_RECOMMENDATION, getAngleRecommendation);
     }
 
-    public void getAngleRecommendation(byte[] bytes) {
-        viewModelVisualServer.processImage(bytes);
+
+    /**
+     * return list of recommendations, sorted by most-recommended (index 0) to the least recommended
+     * but still recommended (last index).
+     *
+     * Each item will be represented as a tuple of (distance, angle in rads).
+     * Angle in rads will be 0 if you should go forward,
+     * positive if you should go right,
+     * and negative if you should go left.
+     */
+    public List<Tuple<float, double>>? getAngleRecommendation(byte[] bytes) {
+        return viewModelVisualServer.processImage(bytes);
     }
 
 

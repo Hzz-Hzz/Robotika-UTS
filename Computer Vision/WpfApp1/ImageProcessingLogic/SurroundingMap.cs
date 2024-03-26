@@ -54,6 +54,28 @@ public class SurroundingMap
         intersectionPoints = new ContourList(result, -1, -1);
     }
 
+
+    /**
+     * return list of recommendations, sorted by most-recommended (left) to the least recommended but still recommended (right).
+     * Each item will be a tuple represents (distance, angle in rads).
+     * Angle in rads will be 0 if you should go forward,
+     * positive if you should go right,
+     * and negative if you should go left.
+     */
+    public List<Tuple<float, double>> getRecommendedIntersectionPoints() {
+        var ret = intersectionPoints.contours.Select(e => new Tuple<float, double>(
+            (e.vector2 - origin).Length(), e.vector2.getVectorAngle() //-Vector2.UnitY.getAngleBetween(e.vector2)
+
+            )).ToList();
+        ret.Sort((tuple1, tuple2) => -tuple1.Item1.CompareTo(tuple2.Item1));
+        var mostRecommended = ret[0];
+
+        return ret.Where(e
+            // filter only if difference is less than 5%
+            => Math.Abs(mostRecommended.Item1 - e.Item1) / mostRecommended.Item1 < 0.05f
+        ).ToList();
+    }
+
     private ContourPoint? selectClosestPoint(Vector2 originPoint, List<ContourPoint> contourPoints) {
         if (contourPoints.Count == 0)
             return null;

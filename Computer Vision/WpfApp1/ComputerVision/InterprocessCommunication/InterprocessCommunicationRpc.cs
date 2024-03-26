@@ -59,7 +59,7 @@ public class InterprocessCommunicationRpc<E> where E: System.Enum
             if (typeof(R) == typeof(NoReturn)) {
                 completionSource.SetResult(default(R));
             }
-            if (o == null && returnTypeIsNullable) {
+            if (o == null || Equals(o, default(R)) ) {
                 completionSource.SetResult(default(R));
                 return;
             }
@@ -135,9 +135,10 @@ public class InterprocessCommunicationRpc<E> where E: System.Enum
             .ToArray();
         try {
             var convertedParameters = new object[parameters.Length].Select((_, i) => {
+                if (parameters[i] == null)
+                    return null;
                 var jtoken = JToken.FromObject(parameters[i]);
-                var ret = jtoken.ToObject(methodParamTypes[i]);
-                return ret;
+                return jtoken.ToObject(methodParamTypes[i]);
             }).ToArray();
 
             var ret = method.DynamicInvoke(convertedParameters);
@@ -149,7 +150,7 @@ public class InterprocessCommunicationRpc<E> where E: System.Enum
 
             call<object>(INVALID_PARAMETER_EXCEPTION, id, new object[]{id, e.Message});
             throw new WarningException($"Received an invalid parameter for {getEnumFromInt(queryCode).ToString()}. " +
-                                       $"Given params count: {parameters.Length}. Given params type: {paramsTypesJoined}");
+                                       $"Given params count: {parameters.Length}. Given params type: {paramsTypesJoined}", e);
         }
     }
 

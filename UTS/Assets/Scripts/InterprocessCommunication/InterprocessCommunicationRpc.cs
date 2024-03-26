@@ -59,7 +59,7 @@ public class InterprocessCommunicationRpc<E> where E: System.Enum
             if (typeof(R) == typeof(NoReturn)) {
                 completionSource.SetResult(default(R));
             }
-            if (o == null && returnTypeIsNullable) {
+            if (o == null || Equals(o, default(R)) ) {
                 completionSource.SetResult(default(R));
                 return;
             }
