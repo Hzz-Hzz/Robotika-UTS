@@ -5,6 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 
 /**
@@ -15,6 +17,7 @@ public class InterprocessCommunicationRpc<E> where E: System.Enum
     public const int INVALID_RETURN_TYPE_EXCEPTION = Int32.MaxValue;
     public const int INVALID_PARAMETER_EXCEPTION = Int32.MaxValue - 1;
     public const int INVALID_QUERY_CODE = Int32.MaxValue - 2;
+    public bool doNotSendErrorOnAlreadyClosedPipe = false;
 
     private InterprocessCommunicationWithTypes _interprocessCommunication;
 
@@ -61,7 +64,9 @@ public class InterprocessCommunicationRpc<E> where E: System.Enum
                 return;
             }
             try {
-                completionSource.SetResult((R)o);
+                var jtoken = JToken.FromObject(o);
+                var retVal = jtoken.ToObject<R>();
+                completionSource.SetResult(retVal);
             }
             catch (InvalidCastException e) {
                 raiseInvalidReturnTypeErrorToOtherParty(queryCode, requestId, o, completionSource);
@@ -75,9 +80,8 @@ public class InterprocessCommunicationRpc<E> where E: System.Enum
         var sendMessage = _interprocessCommunication.writeMessage(data);  // do not await
         Func<Task<R>> ret = (async () => {
             var success = await sendMessage;
-            if (!success) {
+            if (!success && !doNotSendErrorOnAlreadyClosedPipe)
                 throw new IOException("Communication already closed");
-            }
             return await completionSource.Task;
         });
         return ret.Invoke();
@@ -90,7 +94,7 @@ public class InterprocessCommunicationRpc<E> where E: System.Enum
         var parameters = msg.Item3;
         if (commands == INVALID_RETURN_TYPE_EXCEPTION || commands == INVALID_PARAMETER_EXCEPTION
                                                       || commands == INVALID_QUERY_CODE) {
-            var reqId = (int) parameters[0];
+            var reqId = (long) parameters[0];
             var message = (string) parameters[1];
             throw new Exception(message);
         }
@@ -127,15 +131,23 @@ public class InterprocessCommunicationRpc<E> where E: System.Enum
         }
 
         var method = registeredMethods[queryCode];
+        var methodParamTypes = method.GetMethodInfo().GetParameters().Select(p => p.ParameterType)
+            .ToArray();
         try {
-            var ret = method.DynamicInvoke(parameters);
+            var convertedParameters = new object[parameters.Length].Select((_, i) => {
+                var jtoken = JToken.FromObject(parameters[i]);
+                var ret = jtoken.ToObject(methodParamTypes[i]);
+                return ret;
+            }).ToArray();
+
+            var ret = method.DynamicInvoke(convertedParameters);
             call<NoReturn>(queryCode, id, new object[]{ret});
         }
         catch (Exception e) when (e is TargetParameterCountException || e is ArgumentException || e is TargetInvocationException) {
             var paramsTypes = parameters.Select(e => e.GetType().Name).ToString();
             var paramsTypesJoined = String.Join(",", paramsTypes);
 
-            call<object>(INVALID_PARAMETER_EXCEPTION, id, new object[]{e.Message});
+            call<object>(INVALID_PARAMETER_EXCEPTION, id, new object[]{id, e.Message});
             throw new WarningException($"Received an invalid parameter for {getEnumFromInt(queryCode).ToString()}. " +
                                        $"Given params count: {parameters.Length}. Given params type: {paramsTypesJoined}");
         }
@@ -144,14 +156,15 @@ public class InterprocessCommunicationRpc<E> where E: System.Enum
 
     private void raiseQueryCodeErrorToOtherParty(int queryCode, long requestId) {
         var errMsg = $"Query code {queryCode} is not a valid or registered code. Related req ID: {requestId}";
-        call<object>(INVALID_QUERY_CODE, requestId, new object[]{errMsg});
+        call<object>(INVALID_QUERY_CODE, requestId, new object[]{requestId, errMsg});
         throw new WarningException($"Received an invalid queryCode: {queryCode}");
     }
     private void raiseInvalidReturnTypeErrorToOtherParty<R>(int queryCode, long requestId, object o, TaskCompletionSource<R> completionSource) {
         call<object>(INVALID_RETURN_TYPE_EXCEPTION, requestId,
-            new object[]{$"Given type is {o.GetType().Name}, but expected {typeof(R).Name}. " +
-                         $"Related query: {getEnumFromInt(queryCode).ToString()}. Related req ID: {requestId}"});
-        completionSource.SetException(new InvalidCastException());
+            new object[]{requestId,
+                $"Given type is {o.GetType().Name}, but expected {typeof(R).Name}. " +
+                $"Related query: {getEnumFromInt(queryCode).ToString()}. Related req ID: {requestId}"});
+        completionSource.SetException(new InvalidCastException("Fail when casting the return type"));
     }
 
 

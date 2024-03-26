@@ -40,7 +40,7 @@ public class Communication
 
 
     public static int addition(int a, int b, int c) {
-        return a + b * c;
+        return a * b + c;
     }
 
     public static int substraction(int a, int b, int c) {
