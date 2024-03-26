@@ -1,14 +1,10 @@
 using System;
 using System.IO;
-using System.IO.Pipes;
-using System.Text;
 using System.Threading;
-using InterprocessCommunication;
 using JetBrains.Annotations;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 [InitializeOnLoad]
 public class SendCarView : MonoBehaviour
@@ -32,7 +28,7 @@ public class SendCarView : MonoBehaviour
 
         // var handler = CommunicationHandler.handler;
         // handler.startListeningAsync();
-        Temp.initialize();
+        CommunicationHandler.initialize();
     }
 
 
@@ -64,7 +60,7 @@ public class SendCarView : MonoBehaviour
     private Texture2D cameraTexture2D;
     private byte[] cameraSceneBytesData;
     void Update() {
-        Temp.update();
+        CommunicationHandler.update();
 
 
         if (onPauseThreadShouldRun != null)
@@ -173,6 +169,6 @@ public class SendCarView : MonoBehaviour
     }
 
     void OnApplicationQuit() {
-        Temp.disconnect();
+        CommunicationHandler.disconnect();
     }
 }

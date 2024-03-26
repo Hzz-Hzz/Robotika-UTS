@@ -20,6 +20,7 @@ using Newtonsoft.Json;
 public class InterprocessCommunicationWithTypes
 {
     private InterprocessCommunicationBase _interprocessCommunication;
+    private SerializationAlgorithm _serializationAlgorithm;
 
 #region DELEGATIONS
     public event Logging onLog {
@@ -46,66 +47,57 @@ public class InterprocessCommunicationWithTypes
 
     public event NewMessageNotification onReceiveMessage;
 
-    public InterprocessCommunicationWithTypes(InterprocessCommunicationBase interprocessCommunication) {
+    public InterprocessCommunicationWithTypes(InterprocessCommunicationBase interprocessCommunication, SerializationAlgorithm? serializationAlgorithm=null) {
         _interprocessCommunication = interprocessCommunication;
+        _serializationAlgorithm = serializationAlgorithm ?? new NewtonsoftJsonSerializer();
         _interprocessCommunication.onReceiveMessage += this.handleOnReceiveMessage;
     }
 
     private Queue<byte[]> receivedMessages = new Queue<byte[]>();
 
     private void handleOnReceiveMessage(IInterprocessCommunication _, byte[] message) {
+        if (message.Length == 0)
+            return;
         receivedMessages.Enqueue(message);
-        // onReceiveMessage?.Invoke(this);
+        onReceiveMessage?.Invoke(this);
     }
 
     private Thread? listeningThread;
     public async Task startListeningAsync() {
-        // await _interprocessCommunication.initialize();
-        // Task.Run(_interprocessCommunication.startConnectAndListening);  // dont await
+        await _interprocessCommunication.connect();
+        Task.Run(_interprocessCommunication.startListeningLoop);  // dont await
     }
 
     public async Task stopListeningAndDisconnect() {
-        // await _interprocessCommunication.stopListeningAndDisconnect();
+        _interprocessCommunication.stopListening();
+        _interprocessCommunication.dispose();
     }
 
-    public async Task restartListeningAsync() {
-        await stopListeningAndDisconnect();
-        await startListeningAsync();
-    }
-
-    public T readMessage<T>() {
+    public T? readMessage<T>() {
         var data = receivedMessages.Dequeue();
+        return _serializationAlgorithm.DeserializeObject<T>(data);
+    }
+
+    public async Task<bool> writeMessage(object message) {
+        var data = _serializationAlgorithm.SerializeObject(message);
+        return await _interprocessCommunication.write(data);
+    }
+}
+
+
+public interface SerializationAlgorithm
+{
+    public T? DeserializeObject<T>(byte[] data);
+    public byte[] SerializeObject(object data);
+}
+
+public class NewtonsoftJsonSerializer : SerializationAlgorithm
+{
+    public T? DeserializeObject<T>(byte[] data) {
         return JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(data));
     }
 
-    public async Task writeMessage<T>(object message) {
-        var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(message));
-        // await _interprocessCommunication.writeBytes(data);
+    public byte[] SerializeObject(object data) {
+        return Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data));
     }
 }
-//
-//
-// public delegate void ReceiveMessageWithTypes(InterprocessCommunicationWithTypes sender);
-//
-// class MarshallingCodec
-// {  // https://stackoverflow.com/a/19468007/7069108
-//     public static  T FromByteArray<T>(byte[] rawValue)
-//     {
-//         GCHandle handle = GCHandle.Alloc(rawValue, GCHandleType.Pinned);
-//         T structure = (T)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(T));
-//         handle.Free();
-//         return structure;
-//     }
-//
-//     public static byte[] ToByteArray(object your_object, int maxLength)
-//     {
-//         var size = Marshal.SizeOf(your_object);
-//         var bytes = new byte[size];
-//         var ptr = Marshal.AllocHGlobal(size);
-//         Marshal.StructureToPtr(your_object, ptr, false);
-//         Marshal.Copy(ptr, bytes, 0, size);
-//         Marshal.FreeHGlobal(ptr);
-//         return bytes;
-//     }
-// }
-//
