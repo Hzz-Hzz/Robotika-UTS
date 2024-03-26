@@ -10,6 +10,10 @@ public abstract class InterprocessCommunicationBase : IInterprocessCommunication
     public event WaitingForClient? onWaitingForClient;
     public event EstablishingNetwork? onEstablishingNetwork;
     public event Connected? onConnected;
+
+    /**
+     * This event will only be called called if listening loop is running
+     */
     public event Disconnected? onDisconnected;
     public event ReceiveMessage? onReceiveMessage;
     public event FailSendMessage? onFailToSendMessage;
@@ -63,6 +67,16 @@ public abstract class InterprocessCommunicationBase : IInterprocessCommunication
         connect();
     }
 
+
+    public virtual Task<bool> tryConnect() {
+        var task = new TaskCompletionSource<bool>();
+
+        tryCatchConnectionExceptions(async () => {
+            await connect();
+            task.SetResult(true);
+        }, async (e) => task.SetResult(false));
+        return task.Task;
+    }
 
     public abstract Task connect();
     public abstract Task<bool> write(byte[] bytes, bool autoReconnect=true);

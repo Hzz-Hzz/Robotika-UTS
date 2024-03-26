@@ -26,7 +26,6 @@ public class InterprocessCommunicationServer: InterprocessCommunicationBase
 
 
     public override async Task connect() {
-        OnLog(this, "Reinitializing...");
         
         tryDisconnect();
         dispose();
@@ -50,11 +49,7 @@ public class InterprocessCommunicationServer: InterprocessCommunicationBase
 
                 while (_serverStream.IsConnected) {
                     var readSomething = await IInterprocessCommunication.ReadMessage(_serverStream);
-                    foreach (var text in readSomething) {
-                        Console.Write(text);
-                        Console.Write(' ');
-                    }
-
+                    OnReceiveMessage(this, readSomething);
                     Console.WriteLine();
                 }
             });
@@ -63,7 +58,7 @@ public class InterprocessCommunicationServer: InterprocessCommunicationBase
 
 
 
-    private bool prevStateConnected = true;
+    private bool prevStateConnected = false;
     public void tryDisconnect() {
         try {
             if (prevStateConnected && !_serverStream.IsConnected)

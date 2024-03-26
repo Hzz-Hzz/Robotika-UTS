@@ -16,7 +16,9 @@ namespace InterprocessCommunication
 
         public async static void initialize() {
             _interprocess.onLog += (_, msg) => Debug.Log(msg);
-            await _interprocess.connect();
+            _interprocess.onReceiveMessage += (_, msg) => Debug.Log($"Message received: {Encoding.UTF8.GetString(msg)}");
+
+            await _interprocess.tryConnect();
             _interprocess.applyDefaultLoggingEvent();
 
             _stopwatch.Start();
