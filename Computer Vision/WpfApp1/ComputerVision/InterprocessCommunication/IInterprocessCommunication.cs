@@ -6,7 +6,7 @@ public interface IInterprocessCommunication
 {
     public event Logging onLog;
     public event WaitingForClient onWaitingForClient;
-    public event ConnectedToClient onConnectedToClient;
+    public event Connected onConnected;
     public event Disconnected onDisconnected;
     public event ReceiveMessage onReceiveMessage;
     public event FailSendMessage onFailToSendMessage;

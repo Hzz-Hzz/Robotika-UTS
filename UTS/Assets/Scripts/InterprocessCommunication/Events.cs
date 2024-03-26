@@ -1,7 +1,7 @@
 using System;
 
 public delegate void WaitingForClient(IInterprocessCommunication sender);
-public delegate void ConnectedToClient(IInterprocessCommunication sender);
+public delegate void Connected(IInterprocessCommunication sender);
 public delegate void EstablishingNetwork(IInterprocessCommunication sender);
 public delegate void Disconnected(IInterprocessCommunication sender, Exception? e);
 public delegate void ReceiveMessage(IInterprocessCommunication sender, byte[] bytes);

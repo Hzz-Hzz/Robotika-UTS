@@ -139,8 +139,8 @@ public class SendCarView : MonoBehaviour
     {
         var height = targetCameraGameobject.pixelHeight;
         var width = targetCameraGameobject.pixelWidth;
-        Debug.Assert(height > 400);
-        Debug.Assert(width > 400);
+        //Debug.Assert(height > 400);
+        //Debug.Assert(width > 400);
         RenderTexture tempRT = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32)
         {
             antiAliasing = 4

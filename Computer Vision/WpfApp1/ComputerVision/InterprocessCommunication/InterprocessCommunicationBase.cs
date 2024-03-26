@@ -9,7 +9,7 @@ public abstract class InterprocessCommunicationBase : IInterprocessCommunication
     public event Logging? onLog;
     public event WaitingForClient? onWaitingForClient;
     public event EstablishingNetwork? onEstablishingNetwork;
-    public event ConnectedToClient? onConnectedToClient;
+    public event Connected? onConnected;
     public event Disconnected? onDisconnected;
     public event ReceiveMessage? onReceiveMessage;
     public event FailSendMessage? onFailToSendMessage;
@@ -23,8 +23,8 @@ public abstract class InterprocessCommunicationBase : IInterprocessCommunication
     protected void OnEstablishingNetwork(IInterprocessCommunication sender) {
         onEstablishingNetwork?.Invoke(sender);
     }
-    protected void OnConnectedToClient(IInterprocessCommunication sender) {
-        onConnectedToClient?.Invoke(sender);
+    protected void OnConnected(IInterprocessCommunication sender) {
+        onConnected?.Invoke(sender);
     }
     protected void OnDisconnected(IInterprocessCommunication sender, Exception? e) {
         onDisconnected?.Invoke(sender, e);
@@ -75,7 +75,7 @@ public abstract class InterprocessCommunicationBase : IInterprocessCommunication
 
     public void applyDefaultLoggingEvent() {
         onWaitingForClient += (_) => onLog?.Invoke(this, "waiting for client...");
-        onConnectedToClient += (_) => this.onLog?.Invoke(this, "connected...");
+        onConnected += (_) => this.onLog?.Invoke(this, "connected...");
         onDisconnected += (_, e) => this.onLog?.Invoke(this, "disconnected...");
         onReceiveMessage += (_b, content) => this.onLog?.Invoke(this, $"Received {content.Length} bytes message");
         onFailToSendMessage += (_, e, msg) => this.onLog?.Invoke(this, "fail sending msg");

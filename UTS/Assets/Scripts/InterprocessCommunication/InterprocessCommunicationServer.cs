@@ -45,7 +45,7 @@ public class InterprocessCommunicationServer: InterprocessCommunicationBase
 
                 OnWaitingForClient(this);
                 _serverStream.WaitForConnection();
-                OnConnectedToClient(this);
+                OnConnected(this);
                 prevStateConnected = true;
 
                 while (_serverStream.IsConnected) {

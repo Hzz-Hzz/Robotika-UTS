@@ -25,11 +25,10 @@ public class InterprocessCommunicationClient: InterprocessCommunicationBase
 
 
     public override async Task connect() {
-        OnLog(this, "Reinitializing...");
-
         dispose();
         _clientStream = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut);
-        _clientStream.Connect(500);
+        await _clientStream.ConnectAsync(200);
+        OnConnected(this);
         _clientStream.ReadMode = PipeTransmissionMode.Message;
     }
 
@@ -62,17 +61,6 @@ public class InterprocessCommunicationClient: InterprocessCommunicationBase
                 return Task.CompletedTask;
             });
         return success.item;
-    }
-
-    public async Task duringWriteErrorHandling(Exception? e) {
-        var success = new Reference<bool>(false);
-        while (!success.item) {
-            await tryCatchConnectionExceptions(async () => {
-                await base.connectionErrorHandling(e);
-                success.item = true;
-            }, async (_) => { });
-            await Task.Delay(50);
-        }
     }
 }
 
