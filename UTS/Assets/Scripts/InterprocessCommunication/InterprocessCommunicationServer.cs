@@ -49,7 +49,7 @@ public class InterprocessCommunicationServer: InterprocessCommunicationBase
                 prevStateConnected = true;
 
                 while (_serverStream.IsConnected) {
-                    var readSomething = IInterprocessCommunication.ReadMessage(_serverStream);
+                    var readSomething = await IInterprocessCommunication.ReadMessage(_serverStream);
                     foreach (var text in readSomething) {
                         Console.Write(text);
                         Console.Write(' ');

@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using UnityEngine;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace InterprocessCommunication
 {
@@ -9,14 +10,22 @@ namespace InterprocessCommunication
 
 
         public static InterprocessCommunicationClient _interprocess = new InterprocessCommunicationClient("NuelValenRobotik");
+        public static System.Diagnostics.Stopwatch _stopwatch = new System.Diagnostics.Stopwatch();
+
+
 
         public async static void initialize() {
             _interprocess.onLog += (_, msg) => Debug.Log(msg);
             await _interprocess.connect();
             _interprocess.applyDefaultLoggingEvent();
+
+            _stopwatch.Start();
         }
 
         public static void update() {
+            if (_stopwatch.ElapsedMilliseconds < 1000)
+                return;
+            _stopwatch.Restart();
             Temp._interprocess.write(Encoding.UTF8.GetBytes("abc"));
         }
 
