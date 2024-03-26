@@ -19,6 +19,8 @@ public class SendCarView : MonoBehaviour
     private StreamReader clientStreamReader;
     private BinaryWriter clientStreamWriter;
 
+    private RpcFacade _rpcFacade;
+
     void Start()
     {
         targetCameraGameobject = GetComponent<Camera>();
@@ -26,9 +28,8 @@ public class SendCarView : MonoBehaviour
         _saveDatasetStopwatch.Start();
         EditorApplication.pauseStateChanged += HandleOnPlayModeChanged;
 
-        // var handler = CommunicationHandler.handler;
-        // handler.startListeningAsync();
-        Communication.startListening();
+        _rpcFacade = new RpcFacade();
+        _rpcFacade.startListening();
     }
 
 
@@ -50,7 +51,7 @@ public class SendCarView : MonoBehaviour
     }
     void UpdateContinously() {
         while (onPauseThreadShouldRun ?? false) {
-            sendSceneToServer(true);
+            sendSceneToServerOrSaveDataset(true);
             Thread.Sleep(100);
         }
         onPauseThreadShouldRun = null;
@@ -73,13 +74,14 @@ public class SendCarView : MonoBehaviour
             Console.WriteLine("keydown p");
             saveDataset = !saveDataset;
         }
-        sendSceneToServer(false);
+        sendSceneToServerOrSaveDataset(false);
     }
 
-    void sendSceneToServer(bool isPaused) {
+    void sendSceneToServerOrSaveDataset(bool isPaused) {
         try {
             cameraTexture2D = CamCapture(cameraTexture2D);
             cameraSceneBytesData = cameraTexture2D.EncodeToPNG();
+            _ = _rpcFacade.getAngleRecommendation(cameraSceneBytesData);  // TODO
         }
         catch (Exception e) when (e is UnityException || e is InvalidOperationException) {
             if (!e.Message.Contains("main thread")) throw;
@@ -87,7 +89,6 @@ public class SendCarView : MonoBehaviour
 
         if (cameraSceneBytesData != null && !isPaused) {
             saveDatasetTo(cameraSceneBytesData);
-            // CommunicationHandler.handler.sendImage(cameraSceneBytesData);
         }
     }
 
@@ -168,6 +169,6 @@ public class SendCarView : MonoBehaviour
     }
 
     void OnApplicationQuit() {
-        Communication.startListening();
+        _rpcFacade.stopListening();
     }
 }

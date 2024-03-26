@@ -24,6 +24,7 @@ namespace WpfApp1
     public partial class MainWindow : Window
     {
         private ViewModelVisualServer? viewModel;
+        private RpcFacade? communication;
 
         public MainWindow()
         {
@@ -31,7 +32,8 @@ namespace WpfApp1
             viewModel = new ViewModelVisualServer();
             DataContext = viewModel;
 
-            Communication.startListening();
+            communication = new RpcFacade(viewModel);
+            Task.Run(communication.startListening);
         }
 
         private SettingsPersistenceLogic settingsPersistence = new("settings.xml");
