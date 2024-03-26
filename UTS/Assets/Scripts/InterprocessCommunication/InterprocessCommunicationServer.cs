@@ -20,14 +20,13 @@ public class InterprocessCommunicationServer: InterprocessCommunicationBase
     }
 
     private void initializePipeStream() {
-        _serverStream = new NamedPipeServerStream(pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Message);
+        _serverStream = new NamedPipeServerStream(pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Message,
+            PipeOptions.Asynchronous);
     }
 
 
 
     public override async Task connect() {
-        OnLog(this, "Reinitializing...");
-        
         tryDisconnect();
         dispose();
         initializePipeStream();
@@ -37,25 +36,33 @@ public class InterprocessCommunicationServer: InterprocessCommunicationBase
         throw new NotImplementedException();
     }
 
-    public async Task listeningLoop() {
-        while (true) {
+
+    public override async Task startListeningLoop() {
+        try {
+            _listeningForIncomingMessageCancellationToken?.Cancel();
+            _listeningForIncomingMessageCancellationToken = new CancellationTokenSource();
+            await serverStartListeningLoop(_listeningForIncomingMessageCancellationToken.Token);
+        }
+        finally {
+            _listeningForIncomingMessageCancellationToken?.Cancel();
+        }
+    }
+    private async Task serverStartListeningLoop(CancellationToken cancellationToken) {
+        while (!cancellationToken.IsCancellationRequested) {
             await tryCatchConnectionExceptions(async () => {
                 if (!_serverStream.IsConnected)
                     await connect();
 
                 OnWaitingForClient(this);
                 _serverStream.WaitForConnection();
-                OnConnected(this);
                 prevStateConnected = true;
+                OnConnected(this);
 
-                while (_serverStream.IsConnected) {
-                    var readSomething = await IInterprocessCommunication.ReadMessage(_serverStream);
-                    OnReceiveMessage(this, readSomething);
-                    Console.WriteLine();
-                }
+                await listeningLoop(cancellationToken);
             });
         }
     }
+
 
 
 

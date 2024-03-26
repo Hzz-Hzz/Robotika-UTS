@@ -1,5 +1,7 @@
 using System;
+using System.Linq;
 using System.Text;
+using System.Threading;
 using UnityEngine;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
@@ -16,10 +18,14 @@ namespace InterprocessCommunication
 
         public async static void initialize() {
             _interprocess.onLog += (_, msg) => Debug.Log(msg);
-            _interprocess.onReceiveMessage += (_, msg) => Debug.Log($"Message received: {Encoding.UTF8.GetString(msg)}");
+            _interprocess.onReceiveMessage += (_, msg) => {
+                var something = msg.Select(e => e.ToString()).ToArray();
+                Debug.Log($"Message received: {String.Join(",", something)}");
+            };
 
             await _interprocess.tryConnect();
             _interprocess.applyDefaultLoggingEvent();
+            new Thread(() => _interprocess.startListeningLoop()).Start();
 
             _stopwatch.Start();
         }

@@ -10,10 +10,16 @@ public abstract class InterprocessCommunicationBase : IInterprocessCommunication
     public event WaitingForClient? onWaitingForClient;
     public event EstablishingNetwork? onEstablishingNetwork;
     public event Connected? onConnected;
+
     /**
      * This event will only be called called if listening loop is running
      */
     public event Disconnected? onDisconnected;
+
+    /**
+     * Due to technical issue, this event may be fired with byte[0] in the middle of being disconnected (but isConnected will still be true)
+     * So please handle it yourself.
+     */
     public event ReceiveMessage? onReceiveMessage;
     public event FailSendMessage? onFailToSendMessage;
 
@@ -41,8 +47,30 @@ public abstract class InterprocessCommunicationBase : IInterprocessCommunication
 
 
 
+    public virtual bool isConnected => pipeStream.IsConnected;
     public virtual string pipeName { get; protected set; }
     public virtual PipeStream pipeStream { get; protected set; }
+
+
+
+    protected CancellationTokenSource? _listeningForIncomingMessageCancellationToken;
+    public abstract Task startListeningLoop();
+
+    /**
+     * Please call this method inside tryCatchConnectionExceptions
+     */
+    protected virtual async Task listeningLoop(CancellationToken? cancellationToken=null) {
+        cancellationToken ??= new CancellationToken(false);
+        while (pipeStream.IsConnected && !cancellationToken.Value.IsCancellationRequested) {
+            var readSomething = await IInterprocessCommunication.ReadMessage(pipeStream, cancellationToken.Value);
+            if (readSomething.Length == 0 && !pipeStream.IsConnected) {
+                OnDisconnected(this, null);
+                return;
+            }
+            OnReceiveMessage(this, readSomething);
+            Console.WriteLine();
+        }
+    }
 
     public async virtual Task tryCatchConnectionExceptions(Func<Task> func, Func<Exception, Task> handler=null) {
         handler ??= connectionErrorHandling;
@@ -60,7 +88,7 @@ public abstract class InterprocessCommunicationBase : IInterprocessCommunication
         }
     }
 
-    public async virtual Task connectionErrorHandling(Exception? e) {
+    protected async virtual Task connectionErrorHandling(Exception? e) {
         OnDisconnected(this, e);
         Thread.Sleep(100);
         connect();

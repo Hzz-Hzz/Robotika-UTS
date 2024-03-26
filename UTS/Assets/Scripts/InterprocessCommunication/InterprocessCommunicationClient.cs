@@ -26,13 +26,46 @@ public class InterprocessCommunicationClient: InterprocessCommunicationBase
 
     public override async Task connect() {
         dispose();
-        _clientStream = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut);
+        _clientStream = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
         await _clientStream.ConnectAsync(200);
         OnConnected(this);
         _clientStream.ReadMode = PipeTransmissionMode.Message;
     }
 
 
+    public override async Task startListeningLoop() {
+        try {
+            _listeningForIncomingMessageCancellationToken?.Cancel();
+            _listeningForIncomingMessageCancellationToken = new CancellationTokenSource();
+            await listeningLoop(_listeningForIncomingMessageCancellationToken.Token);
+        }
+        finally {
+            _listeningForIncomingMessageCancellationToken?.Cancel();
+        }
+    }
+
+    protected override async Task listeningLoop(CancellationToken? cancellationToken=null) {
+        cancellationToken ??= new CancellationToken(false);
+
+        var previousIsConnected = new Reference<bool>(false);
+
+        await tryCatchConnectionExceptions(async () => {
+            while (!cancellationToken.Value.IsCancellationRequested) {
+                if (previousIsConnected.item && !pipeStream.IsConnected)
+                    OnDisconnected(this, null);
+                if (!pipeStream.IsConnected)
+                    await tryCatchConnectionExceptions(connect, async (e) => {
+                        previousIsConnected.item = false;
+                    });
+                else {
+                    previousIsConnected.item = true;
+                }
+                await base.listeningLoop(cancellationToken);
+            }
+        }, async (e) => {
+            previousIsConnected.item = false;
+        });
+    }
 
 
     private bool reconnecting = false;
