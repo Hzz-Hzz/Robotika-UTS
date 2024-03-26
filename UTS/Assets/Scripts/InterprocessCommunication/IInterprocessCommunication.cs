@@ -24,9 +24,7 @@ public interface IInterprocessCommunication
         byte[] buffer = new byte[1024];
         using (var ms = new MemoryStream()) {
             do {
-                Console.WriteLine("Reading async...");
                 var readBytes = await pipe.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
-                Console.WriteLine("DONE Reading async...");
                 ms.Write(buffer, 0, readBytes);
             }
             while (!pipe.IsMessageComplete);

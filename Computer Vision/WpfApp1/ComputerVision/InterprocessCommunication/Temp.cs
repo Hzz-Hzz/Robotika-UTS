@@ -20,7 +20,7 @@ public class Temp
         _interprocess.onReceiveMessage += (_, msg) => Console.WriteLine($"Message received: {Encoding.UTF8.GetString(msg)}");
         _interprocess.applyDefaultLoggingEvent();
 
-        new Thread(simulateSendingMessage).Start();
+        new Thread(() => simulateSendingMessage()).Start();
     }
 
     public async Task startListeningAsync() {
@@ -29,14 +29,16 @@ public class Temp
         await Task.Run(_interprocess.startListeningLoop);
     }
 
-    private void simulateSendingMessage() {  // TODO remove
+    private async Task simulateSendingMessage() {  // TODO remove
         while (true) {
             if (!_interprocess.isConnected) {
                 Console.WriteLine("Not connected, so doesn't send any message");
                 Thread.Sleep(1500);
                 continue;
             }
-            _interprocess.pipeStream.Write(new byte[]{5, 6, 7, 8, 9, 10});
+            Console.WriteLine("sending msg");
+            await _interprocess.write(new byte[]{5, 6, 7, 8, 9, 10});
+            Console.WriteLine("msg sent");
             Thread.Sleep(4000);
         }
     }

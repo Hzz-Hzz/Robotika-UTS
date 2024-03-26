@@ -15,6 +15,12 @@ public abstract class InterprocessCommunicationBase : IInterprocessCommunication
      * This event will only be called called if listening loop is running
      */
     public event Disconnected? onDisconnected;
+
+    /**
+     * Due to technical issue, for InterprocessCommunicationClient, this event may be fired with byte[0]
+     * in the middle of being disconnected/reconnected (but isConnected will show the wrong info at that moment)
+     * So please handle it yourself.
+     */
     public event ReceiveMessage? onReceiveMessage;
     public event FailSendMessage? onFailToSendMessage;
 
@@ -56,6 +62,7 @@ public abstract class InterprocessCommunicationBase : IInterprocessCommunication
      */
     protected virtual async Task listeningLoop(CancellationToken? cancellationToken=null) {
         cancellationToken ??= new CancellationToken(false);
+        await Task.Delay(50);
         while (pipeStream.IsConnected && !cancellationToken.Value.IsCancellationRequested) {
             var readSomething = await IInterprocessCommunication.ReadMessage(pipeStream, cancellationToken.Value);
             if (readSomething.Length == 0 && !pipeStream.IsConnected) {
@@ -63,7 +70,6 @@ public abstract class InterprocessCommunicationBase : IInterprocessCommunication
                 return;
             }
             OnReceiveMessage(this, readSomething);
-            Console.WriteLine();
         }
     }
 
@@ -101,7 +107,35 @@ public abstract class InterprocessCommunicationBase : IInterprocessCommunication
     }
 
     public abstract Task connect();
-    public abstract Task<bool> write(byte[] bytes, bool autoReconnect=true);
+
+
+    private bool reconnecting = false;  // lock to prevent calling connect() asynchronously
+    /**
+     * autoReconnect will try to connect, but only ONCE per method call. NO guarantee that your msg will be sent
+     * You should either check the return type or watching for OnFailToSendMessage event to watch for failing messages.
+     *
+     * return: boolean true if success, or false if fail.
+     */
+    public virtual async Task<bool> write(byte[] bytes, bool autoReconnect=true) {
+        var success = new Reference<bool>(false);
+        await tryCatchConnectionExceptions(async () => {
+                if (!pipeStream.IsConnected && autoReconnect && !reconnecting) {
+                    this.reconnecting = true;
+                    await connect();
+                    this.reconnecting = false;
+                }
+
+                await pipeStream.WriteAsync(bytes);
+                success.item = true;
+            },
+            (e) => {
+                success.item = false;
+                OnFailToSendMessage(this, e, bytes);
+                this.reconnecting = false;
+                return Task.CompletedTask;
+            });
+        return success.item;
+    }
 
     public void dispose()  {
         pipeStream.Close();

@@ -32,11 +32,6 @@ public class InterprocessCommunicationServer: InterprocessCommunicationBase
         initializePipeStream();
     }
 
-    public override Task<bool> write(byte[] bytes, bool autoReconnect=true) {
-        throw new NotImplementedException();
-    }
-
-
     public override async Task startListeningLoop() {
         try {
             _listeningForIncomingMessageCancellationToken?.Cancel();

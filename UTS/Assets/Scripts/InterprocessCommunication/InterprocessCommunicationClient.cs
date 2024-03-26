@@ -24,6 +24,9 @@ public class InterprocessCommunicationClient: InterprocessCommunicationBase
 
 
 
+    /**
+     * This is NOT thread safe
+     */
     public override async Task connect() {
         dispose();
         _clientStream = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
@@ -65,35 +68,6 @@ public class InterprocessCommunicationClient: InterprocessCommunicationBase
         }, async (e) => {
             previousIsConnected.item = false;
         });
-    }
-
-
-    private bool reconnecting = false;
-    /**
-     * autoReconnect will try to connect, but only ONCE per method call. NO guarantee that your msg will be sent
-     * You should either check the return type or watching for OnFailToSendMessage event to watch for failing messages.
-     *
-     * return: boolean true if success, or false if fail.
-     */
-    public override async Task<bool> write(byte[] bytes, bool autoReconnect=true) {
-        var success = new Reference<bool>(false);
-        await tryCatchConnectionExceptions(async () => {
-                if (!_clientStream.IsConnected && autoReconnect && !reconnecting) {
-                    this.reconnecting = true;
-                    await connect();
-                    this.reconnecting = false;
-                }
-
-                await _clientStream.WriteAsync(bytes);
-                success.item = true;
-            },
-            (e) => {
-                success.item = false;
-                OnFailToSendMessage(this, e, bytes);
-                this.reconnecting = false;
-                return Task.CompletedTask;
-            });
-        return success.item;
     }
 }
 
