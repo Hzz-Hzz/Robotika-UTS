@@ -22,6 +22,7 @@ public abstract class InterprocessCommunicationBase : IInterprocessCommunication
      * So please handle it yourself.
      */
     public event ReceiveMessage? onReceiveMessage;
+    public event StopListening? onStopListening;
     public event FailSendMessage? onFailToSendMessage;
 
     protected void OnLog(IInterprocessCommunication sender, string msg) {
@@ -71,6 +72,13 @@ public abstract class InterprocessCommunicationBase : IInterprocessCommunication
             }
             OnReceiveMessage(this, readSomething);
         }
+    }
+
+    /**
+     * This function may not immediately stop the listening process.
+     */
+    public virtual void stopListening() {
+        _listeningForIncomingMessageCancellationToken.Cancel();
     }
 
     public async virtual Task tryCatchConnectionExceptions(Func<Task> func, Func<Exception, Task> handler=null) {
@@ -149,5 +157,6 @@ public abstract class InterprocessCommunicationBase : IInterprocessCommunication
         onDisconnected += (_, e) => this.onLog?.Invoke(this, "disconnected...");
         onReceiveMessage += (_b, content) => this.onLog?.Invoke(this, $"Received {content.Length} bytes message");
         onFailToSendMessage += (_, e, msg) => this.onLog?.Invoke(this, "fail sending msg");
+        onStopListening += (_) => this.onLog?.Invoke(this, "Stop listening...");
     }
 }

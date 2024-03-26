@@ -31,7 +31,7 @@ namespace InterprocessCommunication
         }
 
         public static void update() {
-            if (_stopwatch.ElapsedMilliseconds < 1000)
+            if (_stopwatch.ElapsedMilliseconds < 5000)
                 return;
             _stopwatch.Restart();
             Temp._interprocess.write(Encoding.UTF8.GetBytes("abc"));

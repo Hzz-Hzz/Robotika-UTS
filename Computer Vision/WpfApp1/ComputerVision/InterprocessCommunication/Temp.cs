@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using MathNet.Numerics.Random;
 using WpfApp1;
 
 
@@ -21,6 +22,7 @@ public class Temp
         _interprocess.applyDefaultLoggingEvent();
 
         new Thread(() => simulateSendingMessage()).Start();
+        new Thread(stop).Start();
     }
 
     public async Task startListeningAsync() {
@@ -41,5 +43,12 @@ public class Temp
             Console.WriteLine("msg sent");
             Thread.Sleep(4000);
         }
+    }
+
+    private void stop() {
+        Thread.Sleep(2000 + (int)Random.Shared.NextInt64(2000));
+        Console.WriteLine("stop listening ===========");
+        _interprocess.stopListening();
+
     }
 }
