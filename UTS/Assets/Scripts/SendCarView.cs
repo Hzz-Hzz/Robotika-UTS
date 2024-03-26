@@ -28,7 +28,7 @@ public class SendCarView : MonoBehaviour
 
         // var handler = CommunicationHandler.handler;
         // handler.startListeningAsync();
-        CommunicationHandler.initialize();
+        Communication.startListening();
     }
 
 
@@ -60,7 +60,6 @@ public class SendCarView : MonoBehaviour
     private Texture2D cameraTexture2D;
     private byte[] cameraSceneBytesData;
     void Update() {
-        CommunicationHandler.update();
 
 
         if (onPauseThreadShouldRun != null)
@@ -169,6 +168,6 @@ public class SendCarView : MonoBehaviour
     }
 
     void OnApplicationQuit() {
-        CommunicationHandler.disconnect();
+        Communication.startListening();
     }
 }

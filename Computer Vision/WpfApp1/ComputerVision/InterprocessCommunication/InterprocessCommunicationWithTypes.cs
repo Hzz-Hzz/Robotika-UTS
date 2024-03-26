@@ -65,7 +65,7 @@ public class InterprocessCommunicationWithTypes
     private Thread? listeningThread;
     public async Task startListeningAsync() {
         await _interprocessCommunication.connect();
-        Task.Run(_interprocessCommunication.startListeningLoop);  // dont await
+        await _interprocessCommunication.startListeningLoop();  // dont await
     }
 
     public async Task stopListeningAndDisconnect() {

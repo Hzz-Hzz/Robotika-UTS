@@ -12,8 +12,6 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using Color = System.Windows.Media.Color;
 using Image = System.Windows.Controls.Image;
 using Point = System.Windows.Point;
@@ -26,15 +24,14 @@ namespace WpfApp1
     public partial class MainWindow : Window
     {
         private ViewModelVisualServer? viewModel;
-        private CommunicationHandler? clientHandler;
 
         public MainWindow()
         {
             InitializeComponent();
             viewModel = new ViewModelVisualServer();
             DataContext = viewModel;
-            clientHandler = new CommunicationHandler(viewModel);
-            clientHandler.startListeningAsync();
+
+            Communication.startListening();
         }
 
         private SettingsPersistenceLogic settingsPersistence = new("settings.xml");

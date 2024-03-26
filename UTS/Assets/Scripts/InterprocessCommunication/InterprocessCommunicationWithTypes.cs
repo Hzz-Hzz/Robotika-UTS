@@ -56,6 +56,8 @@ public class InterprocessCommunicationWithTypes
     private Queue<byte[]> receivedMessages = new Queue<byte[]>();
 
     private void handleOnReceiveMessage(IInterprocessCommunication _, byte[] message) {
+        if (message.Length == 0)
+            return;
         receivedMessages.Enqueue(message);
         onReceiveMessage?.Invoke(this);
     }
@@ -63,7 +65,7 @@ public class InterprocessCommunicationWithTypes
     private Thread? listeningThread;
     public async Task startListeningAsync() {
         await _interprocessCommunication.connect();
-        Task.Run(_interprocessCommunication.startListeningLoop);  // dont await
+        await _interprocessCommunication.startListeningLoop();  // dont await
     }
 
     public async Task stopListeningAndDisconnect() {
