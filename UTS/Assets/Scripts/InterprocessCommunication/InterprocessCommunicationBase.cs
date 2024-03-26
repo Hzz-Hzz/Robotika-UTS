@@ -78,7 +78,7 @@ public abstract class InterprocessCommunicationBase : IInterprocessCommunication
      * This function may not immediately stop the listening process.
      */
     public virtual void stopListening() {
-        _listeningForIncomingMessageCancellationToken.Cancel();
+        _listeningForIncomingMessageCancellationToken?.Cancel();
     }
 
     public async virtual Task tryCatchConnectionExceptions(Func<Task> func, Func<Exception, Task> handler=null) {

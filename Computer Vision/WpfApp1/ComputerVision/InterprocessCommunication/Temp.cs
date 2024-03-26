@@ -46,7 +46,7 @@ public class Temp
     }
 
     private void stop() {
-        Thread.Sleep(2000 + (int)Random.Shared.NextInt64(2000));
+        Thread.Sleep(12000 + (int)Random.Shared.NextInt64(2000));
         Console.WriteLine("stop listening ===========");
         _interprocess.stopListening();
 

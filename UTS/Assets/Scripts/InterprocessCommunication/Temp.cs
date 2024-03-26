@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using UnityEngine;
+using Random = System.Random;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace InterprocessCommunication
@@ -26,6 +27,7 @@ namespace InterprocessCommunication
             await _interprocess.tryConnect();
             _interprocess.applyDefaultLoggingEvent();
             new Thread(() => _interprocess.startListeningLoop()).Start();
+            new Thread(() => stopp()).Start();
 
             _stopwatch.Start();
         }
@@ -39,6 +41,13 @@ namespace InterprocessCommunication
 
         public static void disconnect() {
             _interprocess.dispose();
+        }
+
+        private static void stopp() {
+            Thread.Sleep(2000 + new Random().Next(2000));
+            Debug.Log("stop listening ===========");
+            _interprocess.stopListening();
+
         }
     }
 }
