@@ -25,9 +25,9 @@ public class InterprocessCommunicationRpc<E> where E: System.Enum
         this._interprocessCommunication = _interprocessCommunication;
     }
 
-    public async void startListeningAsyncFireAndForgetButKeepException() {
+    public async void startListeningAsyncFireAndForgetButKeepException(Action<Exception> onException) {
         startListeningAsync().ContinueWith((t) => {
-            Console.Error.WriteLine(t.Exception.InnerException.ToString());
+            onException.Invoke(t.Exception.InnerException);
         }, TaskContinuationOptions.OnlyOnFaulted);
     }
     public async Task startListeningAsync() {
@@ -143,7 +143,7 @@ public class InterprocessCommunicationRpc<E> where E: System.Enum
             var ret = method.DynamicInvoke(convertedParameters);
             call<NoReturn>(queryCode, id, new object[]{ret});
         }
-        catch (Exception e) when (e is TargetParameterCountException || e is ArgumentException || e is TargetInvocationException) {
+        catch (Exception e) when (e is TargetParameterCountException || e is ArgumentException || e is TargetInvocationException || e is JsonSerializationException) {
             var paramsTypes = parameters.Select(e => e.GetType().Name).ToString();
             var paramsTypesJoined = String.Join(",", paramsTypes);
 

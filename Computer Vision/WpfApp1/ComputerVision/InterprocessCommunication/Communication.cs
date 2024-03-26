@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,6 +16,7 @@ public class Communication
 
         var interpWithTypes = new InterprocessCommunicationWithTypes(server);
         interprocessCommunication = new InterprocessCommunicationRpc<CommunicationCodes>(interpWithTypes);
+        interprocessCommunication.doNotSendErrorOnAlreadyClosedPipe = true;
         registerMethods();
     }
 
@@ -30,17 +32,18 @@ public class Communication
             }).Start();
         };
 
-        interprocessCommunication.startListeningAsyncFireAndForgetButKeepException();
+        interprocessCommunication.startListeningAsyncFireAndForgetButKeepException(
+            (e) => Console.Error.WriteLine(e.ToString()));
     }
 
     private static void registerMethods() {
-        interprocessCommunication.registerMethod(CommunicationCodes.ADDITION, (Func<int, int, int, int>) addition);
+        interprocessCommunication.registerMethod(CommunicationCodes.ADDITION, (Func<Vector2, Vector2, int, Vector2>) addition);
         interprocessCommunication.registerMethod(CommunicationCodes.SUBSTRACTION, (Func<int, int, int, int>) substraction);
     }
 
 
-    public static int addition(int a, int b, int c) {
-        return a * b + c;
+    public static Vector2 addition(Vector2 a, Vector2 b, int c) {
+        return (a + b) * c;
     }
 
     public static int substraction(int a, int b, int c) {

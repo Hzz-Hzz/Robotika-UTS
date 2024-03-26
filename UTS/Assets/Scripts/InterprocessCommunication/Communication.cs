@@ -14,6 +14,7 @@ public class Communication
 
         var interpWithTypes = new InterprocessCommunicationWithTypes(server);
         interprocessCommunication = new InterprocessCommunicationRpc<CommunicationCodes>(interpWithTypes);
+        interprocessCommunication.doNotSendErrorOnAlreadyClosedPipe = true;
         registerMethods();
     }
 
@@ -26,12 +27,14 @@ public class Communication
 
                 Thread.Sleep(1000);
                 Debug.Log("Carrying out operations");
-                var result = await interprocessCommunication.call<int>(CommunicationCodes.ADDITION, 2, 3, 5);
+                var result = await interprocessCommunication.call<System.Numerics.Vector2>(CommunicationCodes.ADDITION,
+                    new System.Numerics.Vector2(1, 3), new System.Numerics.Vector2(-5, 2), 3);
                 Debug.Log($" =================== {result} =================== ");
             }).Start();
         };
 
-        interprocessCommunication.startListeningAsyncFireAndForgetButKeepException();
+        interprocessCommunication.startListeningAsyncFireAndForgetButKeepException(
+            (e) => Debug.LogError((e.ToString())));
     }
 
     public static void stopListening() {
@@ -39,13 +42,14 @@ public class Communication
     }
 
     private static void registerMethods() {
-        interprocessCommunication.registerMethod(CommunicationCodes.ADDITION, (Func<int, int, int, int>) addition);
+        interprocessCommunication.registerMethod(CommunicationCodes.ADDITION,
+            (Func<System.Numerics.Vector2, System.Numerics.Vector2, int, System.Numerics.Vector2>) addition);
         interprocessCommunication.registerMethod(CommunicationCodes.SUBSTRACTION, (Func<int, int, int, int>) substraction);
     }
 
 
-    public static int addition(int a, int b, int c) {
-        return a + b * c;
+    public static System.Numerics.Vector2 addition(System.Numerics.Vector2 a, System.Numerics.Vector2 b, int c) {
+        return (a + b) * c;
     }
 
     public static int substraction(int a, int b, int c) {
