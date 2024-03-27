@@ -54,7 +54,8 @@ public class InterprocessCommunicationRpc<E> where E: System.Enum
 
     private Task<R> call<R>(int queryCode, long requestId, object[] parameters) {
         var completionSource = new TaskCompletionSource<R>();
-        requestQueue.Add(new Tuple<int, long>(queryCode, requestId), o => {
+        var key = new Tuple<int, long>(queryCode, requestId);
+        requestQueue.Add(key, o => {
             var returnTypeIsNullable = (Nullable.GetUnderlyingType(typeof(R)) != null);
             if (typeof(R) == typeof(NoReturn)) {
                 completionSource.SetResult(default(R));
@@ -67,6 +68,7 @@ public class InterprocessCommunicationRpc<E> where E: System.Enum
                 var jtoken = JToken.FromObject(o);
                 var retVal = jtoken.ToObject<R>();
                 completionSource.SetResult(retVal);
+                requestQueue.Remove(key);
             }
             catch (InvalidCastException e) {
                 raiseInvalidReturnTypeErrorToOtherParty(queryCode, requestId, o, completionSource);
@@ -135,21 +137,24 @@ public class InterprocessCommunicationRpc<E> where E: System.Enum
             .ToArray();
         try {
             var convertedParameters = new object[parameters.Length].Select((_, i) => {
+                if (parameters[i] == null)
+                    return null;
                 var jtoken = JToken.FromObject(parameters[i]);
-                var ret = jtoken.ToObject(methodParamTypes[i]);
-                return ret;
+                return jtoken.ToObject(methodParamTypes[i]);
             }).ToArray();
 
             var ret = method.DynamicInvoke(convertedParameters);
             call<NoReturn>(queryCode, id, new object[]{ret});
         }
-        catch (Exception e) when (e is TargetParameterCountException || e is ArgumentException || e is TargetInvocationException || e is JsonSerializationException) {
+        catch (Exception e) when (e is TargetParameterCountException || e is ArgumentException || e is JsonSerializationException) {
             var paramsTypes = parameters.Select(e => e.GetType().Name).ToString();
             var paramsTypesJoined = String.Join(",", paramsTypes);
 
             call<object>(INVALID_PARAMETER_EXCEPTION, id, new object[]{id, e.Message});
+            Console.Error.WriteLine(e.ToString());
+
             throw new WarningException($"Received an invalid parameter for {getEnumFromInt(queryCode).ToString()}. " +
-                                       $"Given params count: {parameters.Length}. Given params type: {paramsTypesJoined}");
+                                       $"Given params count: {parameters.Length}. Given params type: {paramsTypesJoined}", e);
         }
     }
 

@@ -1,3 +1,5 @@
+global using AngleRecommendationsReturnType = System.Collections.Generic.List<System.Tuple<float, double, System.Numerics.Vector2>>;
+
 using System.Diagnostics;
 using System.Drawing;
 using System.Numerics;
@@ -43,7 +45,7 @@ public class SurroundingMap
     }
 
 
-    private List<Tuple<float, double, Vector2>> recommendedAngles;
+    private AngleRecommendationsReturnType recommendedAngles;
 
     public void updateIntersectionPoints(bool includeAnglesThatDoesNotIntersects=true) {
         var rayCastLines = this.raycastLines;
@@ -85,8 +87,8 @@ public class SurroundingMap
     /**
      * See docs of calculateRecommendedIntersectionPoints
      */
-    public List<Tuple<float, double>> getCachedRecommendedIntersectionPoints() {
-        return recommendedAngles.Select(e => new Tuple<float,double>(e.Item1, e.Item2)).ToList();
+    public AngleRecommendationsReturnType getCachedRecommendedIntersectionPoints() {
+        return recommendedAngles;
     }
 
     /**
@@ -96,7 +98,7 @@ public class SurroundingMap
      * positive if you should go right,
      * and negative if you should go left.
      */
-    private List<Tuple<float, double, Vector2>> calculateRecommendedIntersectionPoints() {
+    private AngleRecommendationsReturnType calculateRecommendedIntersectionPoints() {
         var ret = intersectionPoints.contours.Select(e => new Tuple<float, double, Vector2>(
             (e.vector2 - origin).Length(), e.vector2.getAngleBetween(Vector2.UnitY), e.vector2)).ToList();
         ret.Sort((tuple1, tuple2) => -priorityScoreCalculation(tuple1).CompareTo(priorityScoreCalculation(tuple2)));

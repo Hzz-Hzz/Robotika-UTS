@@ -54,7 +54,8 @@ public class InterprocessCommunicationRpc<E> where E: System.Enum
 
     private Task<R> call<R>(int queryCode, long requestId, object[] parameters) {
         var completionSource = new TaskCompletionSource<R>();
-        requestQueue.Add(new Tuple<int, long>(queryCode, requestId), o => {
+        var key = new Tuple<int, long>(queryCode, requestId);
+        requestQueue.Add(key, o => {
             var returnTypeIsNullable = (Nullable.GetUnderlyingType(typeof(R)) != null);
             if (typeof(R) == typeof(NoReturn)) {
                 completionSource.SetResult(default(R));
@@ -67,6 +68,7 @@ public class InterprocessCommunicationRpc<E> where E: System.Enum
                 var jtoken = JToken.FromObject(o);
                 var retVal = jtoken.ToObject<R>();
                 completionSource.SetResult(retVal);
+                requestQueue.Remove(key);
             }
             catch (InvalidCastException e) {
                 raiseInvalidReturnTypeErrorToOtherParty(queryCode, requestId, o, completionSource);

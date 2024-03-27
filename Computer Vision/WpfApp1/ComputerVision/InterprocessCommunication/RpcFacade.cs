@@ -1,3 +1,5 @@
+global using AngleRecommendationsReturnType = System.Collections.Generic.List<System.Tuple<float, double, System.Numerics.Vector2>>;
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -28,10 +30,11 @@ public class RpcFacade
      * positive if you should go right,
      * and negative if you should go left.
      */
-    public List<Tuple<float, double>>? getAngleRecommendation(byte[] bytes) {
+    public AngleRecommendationsReturnType? getAngleRecommendation(byte[] bytes) {
         if (bytes == null)
-            return new List<Tuple<float, double>>();
-        return viewModelVisualServer.processImage(bytes);
+            return new AngleRecommendationsReturnType();
+        var ret = viewModelVisualServer.processImage(bytes);
+        return ret;
     }
 
     public Tuple<Vector2?, Vector2?> getClosestSurrounding() {

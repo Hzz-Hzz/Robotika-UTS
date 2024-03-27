@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace EventsEmitter.models
 {
@@ -17,6 +18,6 @@ namespace EventsEmitter.models
          *
          * For more updated information, please see getAngleRecommendation() at Server's C# project, file: RpcFacade.cs
         */
-        public List<Tuple<float, double>> recomomendations;
+        public List<Tuple<float, double, Vector2>> recomomendations;
     }
 }

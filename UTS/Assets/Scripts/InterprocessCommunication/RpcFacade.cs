@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
 
 
-using AngleRecRet = System.Collections.Generic.List<System.Tuple<float, double>>;
+using AngleRecommendation = System.Tuple<float, double, UnityEngine.Vector2>;
 
 
 // facade to do Remote Procedural Call
@@ -25,16 +26,17 @@ public class RpcFacade
 
 
 
-    [CanBeNull] private AngleRecRet _getAngleRecommendationCachedResult;
+    [CanBeNull] private List<AngleRecommendation> _getAngleRecommendationCachedResult;
     [ItemCanBeNull]
-    public async Task<AngleRecRet> getAngleRecommendation(byte[] bytes) {
+    public async Task<List<AngleRecommendation>> getAngleRecommendation(byte[] bytes) {
         if (_stopwatch.ElapsedMilliseconds < 1000 / 20 && _getAngleRecommendationCachedResult != null) // 20FPS cap
             return _getAngleRecommendationCachedResult;
         _stopwatch.Restart();
 
-        _getAngleRecommendationCachedResult =
-            await interprocessCommunication.call<AngleRecRet?>(
-                QueryCommandsEnum.GET_ANGLE_RECOMMENDATION, bytes);
+        var result = await interprocessCommunication.call<List<Tuple<float, double, System.Numerics.Vector2>>?>(
+            QueryCommandsEnum.GET_ANGLE_RECOMMENDATION, bytes);
+        _getAngleRecommendationCachedResult = result.Select(e=>
+            new AngleRecommendation(e.Item1, e.Item2, new Vector2(e.Item3.X, e.Item3.Y))).ToList();
         return _getAngleRecommendationCachedResult;
     }
 

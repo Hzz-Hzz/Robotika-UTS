@@ -55,7 +55,8 @@ namespace InterprocessCommunication
                 if (angleRecommendation == null)
                     continue;
                 angleRecommendation = angleRecommendation
-                    .Select(e => new Tuple<float, double>(e.Item1, 180 * e.Item2 / Math.PI)).ToList();
+                    .Select(e => new Tuple<float, double, Vector2>(
+                        e.Item1, 180 * e.Item2 / Math.PI, e.Item3)).ToList();
                 tryToDirectTheCarToMiddleOfRoad(angleRecommendation, closestRoadEdgeInformationTask.Result);
                 AngleRecommendationReceived?.Invoke(new AngleRecommendationReceivedEventArgs{
                     recomomendations = angleRecommendation
@@ -63,7 +64,7 @@ namespace InterprocessCommunication
             }
         }
 
-        private void tryToDirectTheCarToMiddleOfRoad(List<Tuple<float, double>> angleRecommendation,
+        private void tryToDirectTheCarToMiddleOfRoad(List<Tuple<float, double, Vector2>> angleRecommendation,
             Tuple<Vector2?, Vector2?> roadLeftAndRightBoundary
         ) {
             if (angleRecommendation.Count == 0
@@ -75,18 +76,24 @@ namespace InterprocessCommunication
             var theRecommendationIntersectsWithRoadEdge = (currentRecommendation.Item1 < 9);
             if (theRecommendationIntersectsWithRoadEdge)
                 return;
-            var leftDistance = roadLeftAndRightBoundary.Item1.Value.x;
-            var rightDistance = roadLeftAndRightBoundary.Item2.Value.x;
+            var leftDistance = Math.Abs(roadLeftAndRightBoundary.Item1.Value.x);
+            var rightDistance = Math.Abs(roadLeftAndRightBoundary.Item2.Value.x);
             if (Math.Abs(leftDistance - rightDistance) < 0.07)  // just assume they're equal
                 return;
             var mid = 0;
             var twoDegree = 2;
 
-            if (leftDistance < rightDistance)  // go to right for 2 degree
-                angleRecommendation.Insert(0, new
-                    Tuple<float, double>(currentRecommendation.Item1, mid - twoDegree));
-            else angleRecommendation.Insert(0, new
-                Tuple<float, double>(currentRecommendation.Item1, mid + twoDegree));
+            var targetDegree = mid + twoDegree;
+            // negative is ccw
+            var directioNVector = Quaternion.AngleAxis(-2f, Vector3.forward) * currentRecommendation.Item3;
+
+            if (leftDistance > rightDistance) { // slightly go left
+                targetDegree = mid - twoDegree;
+                // positive angle is clockwise
+                directioNVector = Quaternion.AngleAxis(2f, Vector3.forward)*currentRecommendation.Item3;
+            }
+
+            angleRecommendation.Insert(0, new Tuple<float, double, Vector2>(currentRecommendation.Item1, targetDegree, directioNVector));
         }
 
 

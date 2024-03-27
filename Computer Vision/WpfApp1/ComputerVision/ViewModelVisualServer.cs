@@ -97,7 +97,7 @@ public class ViewModelVisualServer : INotifyPropertyChanged
     /**
      * This returns tuples of (distance, recommended angle in rads)
      */
-    public List<Tuple<float, double>>? processImage(byte[] imageByte) {
+    public AngleRecommendationsReturnType? processImage(byte[] imageByte) {
         var converter = new ByteToCroppedImageFactory();
         var image = converter.convert(imageByte);
 
@@ -141,7 +141,7 @@ public class ViewModelVisualServer : INotifyPropertyChanged
     /**
      * This returns tuples of (distance, recommended angle in rads)
      */
-    private List<Tuple<float, double>> updateSurrondingMap(ContourList contourList, int rows, int cols) {
+    private AngleRecommendationsReturnType updateSurrondingMap(ContourList contourList, int rows, int cols) {
         prevSurroundingMap = SurroundingMap.fromCameraContourList(contourList);
         prevSurroundingMap.updateIntersectionPoints();
 
