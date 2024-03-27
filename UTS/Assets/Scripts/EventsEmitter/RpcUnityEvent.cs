@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using EventsEmitter.models;
 using UnityEngine;
@@ -53,6 +54,8 @@ namespace InterprocessCommunication
                 var angleRecommendation = angleRecommendationTask.Result;
                 if (angleRecommendation == null)
                     continue;
+                angleRecommendation = angleRecommendation
+                    .Select(e => new Tuple<float, double>(e.Item1, 180 * e.Item2 / Math.PI)).ToList();
                 tryToDirectTheCarToMiddleOfRoad(angleRecommendation, closestRoadEdgeInformationTask.Result);
                 AngleRecommendationReceived?.Invoke(new AngleRecommendationReceivedEventArgs{
                     recomomendations = angleRecommendation
@@ -74,10 +77,10 @@ namespace InterprocessCommunication
                 return;
             var leftDistance = roadLeftAndRightBoundary.Item1.Value.x;
             var rightDistance = roadLeftAndRightBoundary.Item2.Value.x;
-            if (Math.Abs(leftDistance - rightDistance) < 0.1)  // just assume they're equal
+            if (Math.Abs(leftDistance - rightDistance) < 0.07)  // just assume they're equal
                 return;
-            var mid = Math.PI / 2;
-            var twoDegree = Math.PI * 2.0 / 180.0;
+            var mid = 0;
+            var twoDegree = 2;
 
             if (leftDistance < rightDistance)  // go to right for 2 degree
                 angleRecommendation.Insert(0, new

@@ -101,7 +101,7 @@ var x_dot = new List<double>();
 var y_dot = new List<double>();
 
 
-for (var i = 400.0; i < 480.0; i += 0.10){
+for (var i = 200.0; i < 480.0; i += 0.10){
     x_dot.Add(i);
     y_dot.Add(yPixelToYActual(i));
 }

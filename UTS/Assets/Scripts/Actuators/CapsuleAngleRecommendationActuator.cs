@@ -65,11 +65,9 @@ namespace Actuators
                 moveForwardSpeed = Math.Max(0.05f, (float)(maximumMoveForwardSpeed *farthestDistance / 0.5  * farthestDistance / 0.4));
             }
 
-            // spec dari server dalam bentuk radians, dan positifnya ke arah counter-clockwise.
-            // Sedangkan spec kita (unity) dalam bentuk degree dan arah positifnya ke arah clockwise (kiri negatif kanan positif)
-            var targetDegree = recommendation.Average(e => e.Item2);  // average angle of selected ones
-            var degree = (float)(targetDegree * 180 / Math.PI);
-            targetAngle = -((float)degree - 90);
+            targetAngle = (float)recommendation.Average(e => e.Item2);  // average angle of selected ones
+
+
             Debug.Log($"angle: {targetAngle:00.00}, dist: {farthestDistance:00.00} speed: {moveForwardSpeed:00.00}");
         }
 

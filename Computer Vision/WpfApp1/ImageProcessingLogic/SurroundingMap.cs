@@ -92,13 +92,13 @@ public class SurroundingMap
     /**
      * return list of recommendations, sorted by most-recommended (left) to the least recommended but still recommended (right).
      * Each item will be a tuple represents (distance, angle in rads).
-     * Angle in rads will be 0 if you should go forward,
+     * Angle in rads, will be 0 if you should go forward,
      * positive if you should go right,
      * and negative if you should go left.
      */
     private List<Tuple<float, double, Vector2>> calculateRecommendedIntersectionPoints() {
         var ret = intersectionPoints.contours.Select(e => new Tuple<float, double, Vector2>(
-            (e.vector2 - origin).Length(), e.vector2.getVectorAngle(), e.vector2)).ToList();
+            (e.vector2 - origin).Length(), e.vector2.getAngleBetween(Vector2.UnitY), e.vector2)).ToList();
         ret.Sort((tuple1, tuple2) => -priorityScoreCalculation(tuple1).CompareTo(priorityScoreCalculation(tuple2)));
         if (ret.Count == 0)
             return ret;
@@ -114,8 +114,9 @@ public class SurroundingMap
         var distance = distanceAndAngle.Item1;
         var angle = distanceAndAngle.Item2;
 
-        // prioritize the one closer with 90 degree (forward). So give negative sign to sort it ascendingly (we will sort the overall score descendingly)
-        var angleStraightness = -Math.Abs(angle - Math.PI / 2);
+        // prioritize the one closer to 0 degree (forward). So give negative sign to sort
+        // it ascendingly (because we will sort the overall score descendingly)
+        var angleStraightness = -Math.Abs(angle);
 
         var distancePriorityWeight = 100;
         var distanceScore = distance * distancePriorityWeight;  // distance is more prioritized than angle straightness
