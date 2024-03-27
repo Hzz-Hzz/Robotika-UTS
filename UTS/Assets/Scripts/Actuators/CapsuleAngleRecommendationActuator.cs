@@ -3,6 +3,7 @@ using System.Collections;
 using System.Linq;
 using System.Threading;
 using EventsEmitter.models;
+using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -18,6 +19,8 @@ namespace Actuators
             StartCoroutine(rotateToward(cancellationTokenSource.Token));
             targetAngle = 0;
             moveForwardSpeed = maximumMoveForwardSpeed;
+
+            rigidBody = GetComponent<Rigidbody>();
         }
 
         private float targetAngle = 0;  // 0 means keep forward, positive means go left, negative means go right
@@ -27,10 +30,19 @@ namespace Actuators
 
         private float? farthestDistance=null;
 
+
         private void Update() {
             var transform = gameObject.transform;
             gameObject.transform.position = transform.position
                                             + moveForwardSpeed * Time.deltaTime * transform.forward.normalized;
+            disableInnertia();
+        }
+
+        [CanBeNull] private Rigidbody rigidBody;
+        private void disableInnertia() {
+            if (rigidBody == null)
+                return;
+            rigidBody.ResetInertiaTensor();
         }
 
         public void OnReceiveAngleRecommendation(AngleRecommendationReceivedEventArgs e) {
