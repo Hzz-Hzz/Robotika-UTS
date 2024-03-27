@@ -142,21 +142,22 @@ public class ViewModelVisualServer : INotifyPropertyChanged
      * This returns tuples of (distance, recommended angle in rads)
      */
     private List<Tuple<float, double>> updateSurrondingMap(ContourList contourList, int rows, int cols) {
-        var surroundingMap = SurroundingMap.fromCameraContourList(contourList);
-        surroundingMap.updateIntersectionPoints();
+        prevSurroundingMap = SurroundingMap.fromCameraContourList(contourList);
+        prevSurroundingMap.updateIntersectionPoints();
 
         using (var mat = new Mat(rows, cols, DepthType.Cv8U, 3)) {
             mat.SetTo(new MCvScalar(0, 0, 0));
-            surroundingMap.drawOnMat(mat);
+            prevSurroundingMap.drawOnMat(mat);
 
             var bitmap = ImageUtility.BitmapToImageSource(mat.ToBitmap());
             bitmap.Freeze();
             ImageSourceSurroundingMap = bitmap;
         }
 
-        return surroundingMap.getRecommendedIntersectionPoints();
+        return prevSurroundingMap.getCachedRecommendedIntersectionPoints();
     }
 
+    public SurroundingMap? prevSurroundingMap { get; set; }
 
 
     public void setStatusToWaitingForClient()

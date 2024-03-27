@@ -47,15 +47,43 @@ namespace InterprocessCommunication
                 currentImageVersion = imageVersion;
 
                 var angleRecommendationTask = _rpcFacade.getAngleRecommendation(imageData);
-                yield return angleRecommendationTask.toCoroutine();
+                var closestRoadEdgeInformationTask = _rpcFacade.getClosestSurrounding();
+                yield return Task.WhenAll(angleRecommendationTask, closestRoadEdgeInformationTask).toCoroutine();
 
                 var angleRecommendation = angleRecommendationTask.Result;
                 if (angleRecommendation == null)
                     continue;
+                tryToDirectTheCarToMiddleOfRoad(angleRecommendation, closestRoadEdgeInformationTask.Result);
                 AngleRecommendationReceived?.Invoke(new AngleRecommendationReceivedEventArgs{
                     recomomendations = angleRecommendation
                 });
             }
+        }
+
+        private void tryToDirectTheCarToMiddleOfRoad(List<Tuple<float, double>> angleRecommendation,
+            Tuple<Vector2?, Vector2?> roadLeftAndRightBoundary
+        ) {
+            if (angleRecommendation.Count == 0
+                || roadLeftAndRightBoundary == null
+                || roadLeftAndRightBoundary.Item1 == null
+                || roadLeftAndRightBoundary.Item2 == null)
+                return;
+            var currentRecommendation = angleRecommendation[0];
+            var theRecommendationIntersectsWithRoadEdge = (currentRecommendation.Item1 < 9);
+            if (theRecommendationIntersectsWithRoadEdge)
+                return;
+            var leftDistance = roadLeftAndRightBoundary.Item1.Value.x;
+            var rightDistance = roadLeftAndRightBoundary.Item2.Value.x;
+            if (Math.Abs(leftDistance - rightDistance) < 0.1)  // just assume they're equal
+                return;
+            var mid = Math.PI / 2;
+            var twoDegree = Math.PI * 2.0 / 180.0;
+
+            if (leftDistance < rightDistance)  // go to right for 2 degree
+                angleRecommendation.Insert(0, new
+                    Tuple<float, double>(currentRecommendation.Item1, mid - twoDegree));
+            else angleRecommendation.Insert(0, new
+                Tuple<float, double>(currentRecommendation.Item1, mid + twoDegree));
         }
 
 

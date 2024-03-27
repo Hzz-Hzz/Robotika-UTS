@@ -42,18 +42,52 @@ public class SurroundingMap
         }
     }
 
-    public void updateIntersectionPoints() {
+
+    private List<Tuple<float, double, Vector2>> recommendedAngles;
+
+    public void updateIntersectionPoints(bool includeAnglesThatDoesNotIntersects=true) {
         var rayCastLines = this.raycastLines;
+        // to make a smooth angle recommendatin, we should include a perfect 90 degree raycast
+        rayCastLines.AddRange(getCircleRayCastLines(origin, 10, (float)Math.PI/2,
+            (float)Math.PI/2+0.001f, 10));
+
         var result = new List<ContourPoint>();
         foreach (var rayCastTarget in rayCastLines) {
             var raycastResult = roadEdgeList.getIntersectionPoints(origin, rayCastTarget);
             var shortestCollisionPoint = selectClosestPoint(origin, raycastResult);
             if (shortestCollisionPoint != null)
                 result.Add(shortestCollisionPoint);
+            else if (includeAnglesThatDoesNotIntersects)
+                result.Add(rayCastTarget.toContourPoint());
         }
         intersectionPoints = new ContourList(result, -1, -1);
+        recommendedAngles = calculateRecommendedIntersectionPoints();
     }
 
+    /**
+     * Find horizontally-closest road edge
+     */
+    public Tuple<Vector2?, Vector2?> getHorizontallyClosestPointOnLeftAndOnRight() {
+        var leftPoints = getRoadEdgeListOnOneSide(true);
+        var rightPoints = getRoadEdgeListOnOneSide(false);
+        var leftClosest = leftPoints.MinBy((e) => Math.Abs(e.X));  // find the one closest to zero
+        var rightClosest = rightPoints.MinBy((e) => Math.Abs(e.X));
+        return new Tuple<Vector2?, Vector2?>(leftClosest?.vector2, rightClosest?.vector2);
+    }
+
+    public List<ContourPoint> getRoadEdgeListOnOneSide(bool leftSide) {
+        Func<ContourPoint, bool> condition = (e => e.X <= 0);
+        if (!leftSide)
+            condition = (e => e.X >= 0);
+        return roadEdgeList.contours.Where(condition).ToList();
+    }
+
+    /**
+     * See docs of calculateRecommendedIntersectionPoints
+     */
+    public List<Tuple<float, double>> getCachedRecommendedIntersectionPoints() {
+        return recommendedAngles.Select(e => new Tuple<float,double>(e.Item1, e.Item2)).ToList();
+    }
 
     /**
      * return list of recommendations, sorted by most-recommended (left) to the least recommended but still recommended (right).
@@ -62,19 +96,33 @@ public class SurroundingMap
      * positive if you should go right,
      * and negative if you should go left.
      */
-    public List<Tuple<float, double>> getRecommendedIntersectionPoints() {
-        var ret = intersectionPoints.contours.Select(e => new Tuple<float, double>(
-            (e.vector2 - origin).Length(), e.vector2.getVectorAngle() //-Vector2.UnitY.getAngleBetween(e.vector2)
-
-            )).ToList();
-        ret.Sort((tuple1, tuple2) => -tuple1.Item1.CompareTo(tuple2.Item1));
+    private List<Tuple<float, double, Vector2>> calculateRecommendedIntersectionPoints() {
+        var ret = intersectionPoints.contours.Select(e => new Tuple<float, double, Vector2>(
+            (e.vector2 - origin).Length(), e.vector2.getVectorAngle(), e.vector2)).ToList();
+        ret.Sort((tuple1, tuple2) => -priorityScoreCalculation(tuple1).CompareTo(priorityScoreCalculation(tuple2)));
+        if (ret.Count == 0)
+            return ret;
         var mostRecommended = ret[0];
-
         return ret.Where(e
-            // filter only if difference is less than 5%
-            => Math.Abs(mostRecommended.Item1 - e.Item1) / mostRecommended.Item1 < 0.05f
+            // filter only if difference is less than 10%
+            => Math.Abs(mostRecommended.Item1 - e.Item1) / mostRecommended.Item1 < 0.1f
         ).ToList();
     }
+
+    // maximize score
+    private double priorityScoreCalculation(Tuple<float, double, Vector2> distanceAndAngle) {
+        var distance = distanceAndAngle.Item1;
+        var angle = distanceAndAngle.Item2;
+
+        // prioritize the one closer with 90 degree (forward). So give negative sign to sort it ascendingly (we will sort the overall score descendingly)
+        var angleStraightness = -Math.Abs(angle - Math.PI / 2);
+
+        var distancePriorityWeight = 100;
+        var distanceScore = distance * distancePriorityWeight;  // distance is more prioritized than angle straightness
+        return distanceScore + angleStraightness;
+    }
+
+
 
     private ContourPoint? selectClosestPoint(Vector2 originPoint, List<ContourPoint> contourPoints) {
         if (contourPoints.Count == 0)
@@ -114,7 +162,7 @@ public class SurroundingMap
         var ret = new List<Vector2>();
         float currentAngle = startAngle;
 
-        while (currentAngle < endAngle) {
+        while (currentAngle <= endAngle) {
             var y = (float)(rayCastLength * Math.Sin(currentAngle));
             var x = (float)(rayCastLength * Math.Cos(currentAngle));
             ret.Add(new Vector2(origin.X + x, origin.Y + y));
@@ -148,6 +196,10 @@ public class SurroundingMap
 
         drawRaycastLinesUntilItsEnd(mat, originContourPoint, transformerToDrawOnMat);
         drawRaycastLinesUntilCollisionPoint(mat, originContourPoint, transformerToDrawOnMat);
+        if (recommendedAngles.Count > 0) {
+            var mostRecommended = transformerToDrawOnMat._applyTransformation(null, recommendedAngles[0].Item3.toContourPoint());
+            CvInvoke.Line(mat, originContourPoint.point,  mostRecommended!.point, new MCvScalar(0, 255, 0));
+        }
     }
 
     private void drawRaycastLinesUntilItsEnd(Mat mat, ContourPoint originContourPoint, IContourPointTransformationDecorator transformerToDrawOnMat) {

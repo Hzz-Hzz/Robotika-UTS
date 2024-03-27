@@ -162,7 +162,7 @@ public abstract class InterprocessCommunicationBase : IInterprocessCommunication
         onWaitingForClient += (_) => onLog?.Invoke(this, "waiting for client...");
         onConnected += (_) => this.onLog?.Invoke(this, "connected...");
         onDisconnected += (_, e) => this.onLog?.Invoke(this, "disconnected...");
-        onReceiveMessage += (_b, content) => this.onLog?.Invoke(this, $"Received {content.Length} bytes message");
+        // onReceiveMessage += (_b, content) => this.onLog?.Invoke(this, $"Received {content.Length} bytes message");
         onFailToSendMessage += (_, e, msg) => this.onLog?.Invoke(this, "fail sending msg");
         onStopListening += (_) => this.onLog?.Invoke(this, "Stop listening...");
     }

@@ -38,6 +38,11 @@ public class RpcFacade
         return _getAngleRecommendationCachedResult;
     }
 
+    public Task<Tuple<Vector2?, Vector2?>> getClosestSurrounding() {
+        return interprocessCommunication.call<Tuple<Vector2?, Vector2?>>(
+            QueryCommandsEnum.GET_ROAD_EDGE_DISTANCES);
+    }
+
 
 
 

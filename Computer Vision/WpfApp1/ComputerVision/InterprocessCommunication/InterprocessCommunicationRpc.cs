@@ -144,11 +144,13 @@ public class InterprocessCommunicationRpc<E> where E: System.Enum
             var ret = method.DynamicInvoke(convertedParameters);
             call<NoReturn>(queryCode, id, new object[]{ret});
         }
-        catch (Exception e) when (e is TargetParameterCountException || e is ArgumentException || e is TargetInvocationException || e is JsonSerializationException) {
+        catch (Exception e) when (e is TargetParameterCountException || e is ArgumentException || e is JsonSerializationException) {
             var paramsTypes = parameters.Select(e => e.GetType().Name).ToString();
             var paramsTypesJoined = String.Join(",", paramsTypes);
 
             call<object>(INVALID_PARAMETER_EXCEPTION, id, new object[]{id, e.Message});
+            Console.Error.WriteLine(e.ToString());
+
             throw new WarningException($"Received an invalid parameter for {getEnumFromInt(queryCode).ToString()}. " +
                                        $"Given params count: {parameters.Length}. Given params type: {paramsTypesJoined}", e);
         }

@@ -15,6 +15,7 @@ public class RpcFacade
 
     private void registerMethods() {
         interprocessCommunication.registerMethod(QueryCommandsEnum.GET_ANGLE_RECOMMENDATION, getAngleRecommendation);
+        interprocessCommunication.registerMethod(QueryCommandsEnum.GET_ROAD_EDGE_DISTANCES, getClosestSurrounding);
     }
 
 
@@ -28,7 +29,15 @@ public class RpcFacade
      * and negative if you should go left.
      */
     public List<Tuple<float, double>>? getAngleRecommendation(byte[] bytes) {
+        if (bytes == null)
+            return new List<Tuple<float, double>>();
         return viewModelVisualServer.processImage(bytes);
+    }
+
+    public Tuple<Vector2?, Vector2?> getClosestSurrounding() {
+        if (viewModelVisualServer.prevSurroundingMap == null)
+            return new Tuple<Vector2?, Vector2?>(Vector2.Zero, Vector2.Zero);
+        return viewModelVisualServer.prevSurroundingMap.getHorizontallyClosestPointOnLeftAndOnRight();
     }
 
 
@@ -40,6 +49,8 @@ public class RpcFacade
 
         var server = new InterprocessCommunicationServer("NuelValenRobotik");
         server.onLog += (sender, msg) => Console.WriteLine(msg);
+        server.onConnected += (e) => viewModelVisualServer.setStatusToClientConnected();
+        server.onWaitingForClient += (_) => viewModelVisualServer.setStatusToWaitingForClient();
         server.applyDefaultLoggingEvent();
 
         var interpWithTypes = new InterprocessCommunicationWithTypes(server);
