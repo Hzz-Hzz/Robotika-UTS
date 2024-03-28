@@ -25,6 +25,7 @@ public class TranslationToCartesiusDecorator : IContourPointTransformationDecora
         var y = imageHeight - point.Y;
 
         var ret = new ContourPoint(x, y, point.area, null);
+        ret.order = point.order;  // just for make debugging easier
         return ret;
     }
 

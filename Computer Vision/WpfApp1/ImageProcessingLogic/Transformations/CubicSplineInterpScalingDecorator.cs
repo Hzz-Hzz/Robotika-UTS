@@ -43,6 +43,7 @@ public class CubicSplineInterpScalingDecorator : IContourPointTransformationDeco
         ContourPoint? backwardLink = null;
 
         var ret = new ContourPoint(x, y, area, null);
+        ret.order = point.order;  // just for make debugging easier
         return ret;
     }
 

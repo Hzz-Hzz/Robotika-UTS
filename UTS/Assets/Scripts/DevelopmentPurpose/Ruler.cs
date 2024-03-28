@@ -43,9 +43,8 @@ public class Ruler : MonoBehaviour
         guiStyle.normal.textColor = Color.red;
         guiStyle.normal.background = Texture2D.whiteTexture;
         guiStyle.fontSize = 20;
-        Handles.Label(end+Vector3.up*0.5f, $"l={length},hl={horizontalLength}", guiStyle);
-
-
+        Handles.Label(end+Vector3.up*0.5f, $"l={length:0.00},hl={horizontalLength:0.00}\n" +
+                                           $"({distanceVector.x:0.000},{distanceVector.z:0.000})", guiStyle);
         Gizmos.color = prevColor;
     }
 }

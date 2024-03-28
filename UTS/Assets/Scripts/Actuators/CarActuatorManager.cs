@@ -17,7 +17,7 @@ namespace Actuators
         public Rigidbody rigidBodyForSpeedSensor;
 
         private MotorTorqueManager _motorTorqueManager = new MotorTorqueManager(75, 0.1f, 30);
-        private SteerDirectionManager _steerDirectionManagerObstacles = new SteerDirectionManager(45, 70);
+        private SteerDirectionManager _steerDirectionManagerObstacles = new SteerDirectionManager(45, 120);
         private ObstacleInfoEventArgs _obstacleInfoEventArgs;
         private SpeedSensor _speedSensor;
 

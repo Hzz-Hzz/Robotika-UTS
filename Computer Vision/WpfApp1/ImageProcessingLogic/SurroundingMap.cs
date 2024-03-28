@@ -17,10 +17,10 @@ public class SurroundingMap
 {
     private ContourList roadEdgeList;
 
-    private const float worldSpaceStartX = -2;
-    private const float worldSpaceEndX = 2;
+    private const float worldSpaceStartX = -20;
+    private const float worldSpaceEndX = 20;
     private const float worldSpaceStartY = 0;
-    private const float worldSpaceEndY = 1;
+    private const float worldSpaceEndY = 10;
     private readonly float maximumDegree = (float) Math.PI / 36f;
 
 
@@ -90,13 +90,24 @@ public class SurroundingMap
      * See docs of calculateRecommendedIntersectionPoints
      */
     public AngleRecommendationsReturnType getMostRecommendedIntersectionPoints() {
+        var angleRangeLeftRight = getMinAndMaxAngleFromContourPoints(roadEdgeList.contours);
+        var angleRange = Math.Abs(angleRangeLeftRight.Item1 - angleRangeLeftRight.Item2);
+
         var anglePriority = getAverageAngleBasedOnRoadEdgeVectorDirections();
-        anglePriority = (float)(Math.PI / 2 - anglePriority);
+
+        anglePriority = (float)(Math.PI / 2 - anglePriority);  // clockwise
         // 0.01 to anticipate floating errors
         throwIfAnyAngleIsNaN(recommendedAngles);
         var averageOfRecommendedGroups = getAverageOfAdjacentVectorsGrouping(recommendedAngles, maximumDegree+0.01f);
         averageOfRecommendedGroups.Sort((a,b)=>
             -priorityScoreCalculation(a,anglePriority).CompareTo(priorityScoreCalculation(b,anglePriority)));
+        throwIfAnyAngleIsNaN(averageOfRecommendedGroups);
+
+        var minimumAngleRangeBeforeInfluenced = 90*Math.PI / 180;
+        // if (angleRange < minimumAngleRangeBeforeInfluenced)
+            // influenceAnglesBasedOnOtherVectors(averageOfRecommendedGroups, anglePriority,
+                // (float)(1 - angleRange / minimumAngleRangeBeforeInfluenced));
+
         throwIfAnyAngleIsNaN(averageOfRecommendedGroups);
         return averageOfRecommendedGroups;
     }
@@ -105,6 +116,16 @@ public class SurroundingMap
         foreach (var i in list) {
             if (Double.IsNaN(i.Item2))
                 throw new Exception("NaN is found");
+        }
+    }
+
+    // Harmful buat "correcting position" ketika off-road
+    private void influenceAnglesBasedOnOtherVectors(AngleRecommendationsReturnType recommended, float influencerAngle, float influencePercentage) {
+        for (int i = 0; i < recommended.Count; i++) {
+            var curr = recommended[i];
+            var newAngle = curr.Item2 + influencerAngle * influencePercentage;
+            var newDirectionVector = Vector2.UnitY.rotate(-newAngle);  // negative because rotate() is CCW, meanwhile our angles are clockwise
+            recommended[i] = new AngleRecommendation(curr.Item1, newAngle, newDirectionVector);
         }
     }
 
@@ -130,7 +151,7 @@ public class SurroundingMap
      */
     private AngleRecommendationsReturnType calculateRecommendedIntersectionPoints() {
         var ret = intersectionPoints.contours.Select(e => new Tuple<float, double, Vector2>(
-            (e.vector2 - origin).Length(), e.vector2.getAngleBetween(Vector2.UnitY), e.vector2)).ToList();
+            (e.vector2 - origin).Length(), getGlobalAngle(e.vector2), e.vector2)).ToList();
         if (ret.Count == 0)
             return ret;
 
@@ -140,6 +161,10 @@ public class SurroundingMap
         ).ToList();
 
         return ret;
+    }
+
+    private double getGlobalAngle(Vector2 vector2) {
+        return vector2.getAngleBetween(Vector2.UnitY);
     }
 
     private AngleRecommendationsReturnType getAverageOfAdjacentVectorsGrouping(AngleRecommendationsReturnType angleRecommendations, float maximumAdjacentDegree) {
@@ -332,6 +357,7 @@ class TranslateContourPointToItOnDrawOnMat : IContourPointTransformationDecorato
         var y = matHeight - (transformationY + point.Y) * scalingY;
         var area = point.area;  // dont know what to do
         var ret = new ContourPoint(x, y, area, null);
+        ret.order = point.order;  // just for make debugging easier
         return ret;
     }
 }
@@ -357,6 +383,14 @@ public static class Vector2ExtensionSurroundingMap
 
     public static ContourPoint toContourPoint(this Vector2 vector2) {
         return new ContourPoint(vector2.X, vector2.Y, -1, null);
+    }
+
+    public static Vector2 rotate(this Vector2 self, double rotationAngle) {
+        var angle = self.getVectorAngle();
+        angle += rotationAngle;
+        var x = self.X * Math.Cos(angle) - self.Y * Math.Sin(angle);
+        var y = self.X * Math.Sin(angle) + self.Y * Math.Cos(angle);
+        return new Vector2((float)x, (float)y);
     }
 }
 
