@@ -17,7 +17,7 @@ namespace Actuators
         public Rigidbody rigidBodyForSpeedSensor;
 
         private MotorTorqueManager _motorTorqueManager = new MotorTorqueManager(75, 0.1f, 30);
-        private SteerDirectionManager _steerDirectionManagerObstacles = new SteerDirectionManager(45, 50);
+        private SteerDirectionManager _steerDirectionManagerObstacles = new SteerDirectionManager(45, 70);
         private ObstacleInfoEventArgs _obstacleInfoEventArgs;
         private SpeedSensor _speedSensor;
 
@@ -55,17 +55,19 @@ namespace Actuators
                 goBackwardUntilTimestamp = Time.time + 3;
             }
 
-            if (goBackwardUntilTimestamp != null) {
+            if (goBackwardUntilTimestamp != null && Time.time < goBackwardUntilTimestamp) {
                 motorTorque = -Math.Max(Math.Abs(motorTorque), _motorTorqueManager.motorTorque / 2);
-                if (!_speedSensor.isGoingForward(transform))
-                    steerAngle = Math.Abs(steerAngle) > 10 ? steerAngle : Math.Sign(steerAngle) * 10;
-                if (goBackwardUntilTimestamp > Time.time)
-                    goBackwardUntilTimestamp = null;
                 if (_obstacleInfoEventArgs.forwardObstacleDistance < 2)
                     goBackwardUntilTimestamp = Time.time + 3;  // refresh
+            } else if (Time.time < goBackwardUntilTimestamp + 3) {
+                if (!_speedSensor.isGoingForward(transform))
+                    steerAngle = Math.Abs(steerAngle) > 10 ? steerAngle : -Math.Sign(steerAngle) * 10;
+                else
+                    steerAngle = Math.Abs(steerAngle) > 10 ? steerAngle : Math.Sign(steerAngle) * 10;
             }
 
-            Debug.Log($"Recommended angle: {angleRecommendation:00.00}  actualAngle: {steerAngle:00.00} " +
+            Debug.Log($"Recommended: (angle:{angleRecommendation:00.00},l:{angleRecommendationCollisionLength:00.00}) " +
+                      $"actualAngle: {steerAngle:00.00} " +
                       $"Speed: {_speedSensor.getCurrentSpeed():00.00}  ObsDist: {_obstacleInfoEventArgs.forwardObstacleDistance:00.00}");
         }
 
@@ -74,11 +76,13 @@ namespace Actuators
         }
 
         private float angleRecommendation = 0;
+        private float angleRecommendationCollisionLength = 0;
         public void OnReceiveAngleRecommendation(AngleRecommendationReceivedEventArgs e) {
             if (e.recomomendations.Count == 0) {
                 Debug.Log("Recommendation array is empty");
                 return;
             }
+            angleRecommendationCollisionLength = e.recomomendations[0].Item1;
             angleRecommendation = (float)e.recomomendations[0].Item2;
         }
 
