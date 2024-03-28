@@ -8474,6 +8474,7 @@ GameObject:
   m_Component:
   - component: {fileID: 591678614}
   - component: {fileID: 591678615}
+  - component: {fileID: 591678616}
   m_Layer: 0
   m_Name: Tronco Collider
   m_TagString: Untagged
@@ -8510,6 +8511,19 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: -2316726938163384289, guid: fc00130645976de4aa3790def8364401, type: 3}
+--- !u!114 &591678616
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 591678613}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38e5d679e5a4bb547aaa4b9b436aa7bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  blacklistTag: 
 --- !u!1001 &596843248
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -12818,7 +12832,7 @@ Transform:
   - {fileID: 5300162438145516722}
   - {fileID: 4806299822805818823}
   m_Father: {fileID: 0}
-  m_RootOrder: 6
+  m_RootOrder: 7
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &900901908
 PrefabInstance:
@@ -14587,8 +14601,8 @@ MonoBehaviour:
   AngleRecommendationReceived:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2011142732}
-        m_TargetAssemblyTypeName: Actuators.CapsuleAngleRecommendationActuator, Assembly-CSharp
+      - m_Target: {fileID: 919132148351641326}
+        m_TargetAssemblyTypeName: Actuators.CarAngleRecommendationActuator, Assembly-CSharp
         m_MethodName: OnReceiveAngleRecommendation
         m_Mode: 0
         m_Arguments:
@@ -14613,7 +14627,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 7
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1008178162
 GameObject:
@@ -19959,7 +19973,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1399673870}
   m_LocalRotation: {x: 0.11320323, y: 0, z: 0, w: 0.9935719}
-  m_LocalPosition: {x: 0.04, y: 2.32, z: 0.9190001}
+  m_LocalPosition: {x: 0.04, y: 2.666, z: 1.378}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -28413,7 +28427,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2011142724
 Transform:
   m_ObjectHideFlags: 0
@@ -28542,7 +28556,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2011142723}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6ca914eb7b16465594218eab44ebdc0e, type: 3}
   m_Name: 
@@ -31569,7 +31583,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 919132148351641323}
   m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: 1.81, y: 2.58, z: 27.99}
+  m_LocalPosition: {x: 0, y: 2.58, z: 5.99}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -31580,7 +31594,7 @@ Transform:
   - {fileID: 864508602}
   - {fileID: 1399673871}
   m_Father: {fileID: 0}
-  m_RootOrder: 5
+  m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1 &695932189916343343
 GameObject:
@@ -31719,6 +31733,7 @@ GameObject:
   - component: {fileID: 543450652355099729}
   - component: {fileID: 919132148351641324}
   - component: {fileID: 919132148351641325}
+  - component: {fileID: 919132148351641326}
   m_Layer: 0
   m_Name: Car
   m_TagString: Untagged
@@ -31749,7 +31764,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 919132148351641323}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0dc28242cd72d6c499de4e7c34991802, type: 3}
   m_Name: 
@@ -31757,6 +31772,22 @@ MonoBehaviour:
   path: {fileID: 785124776}
   LeftWheel: {fileID: 216740998}
   RightWheel: {fileID: 726895845}
+--- !u!114 &919132148351641326
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 919132148351641323}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 063852a4009947b8bc1e29bcc84917af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  leftBack: {fileID: 1855022135}
+  leftFront: {fileID: 216740998}
+  rightBack: {fileID: 841308597}
+  rightFront: {fileID: 726895845}
 --- !u!23 &938806992698495438
 MeshRenderer:
   m_ObjectHideFlags: 0
