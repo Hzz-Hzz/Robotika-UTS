@@ -16,8 +16,8 @@ public static class RayCastingUtility
     }
 
     public static Vector2? getIntersectionPoint(Vector2 startLineA, Vector2 endLineA, Vector2 startLineB, Vector2 endLineB) {
-        if (!checkIfTwoLineIntersect(startLineA, endLineA, startLineB, endLineB))
-            return null;
+        // if (!checkIfTwoLineIntersect(startLineA, endLineA, startLineB, endLineB))
+            // return null;
 
         var p = startLineA;
         var pr = endLineA - startLineA;

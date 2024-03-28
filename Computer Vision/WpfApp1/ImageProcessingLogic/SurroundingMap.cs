@@ -93,10 +93,19 @@ public class SurroundingMap
         var anglePriority = getAverageAngleBasedOnRoadEdgeVectorDirections();
         anglePriority = (float)(Math.PI / 2 - anglePriority);
         // 0.01 to anticipate floating errors
+        throwIfAnyAngleIsNaN(recommendedAngles);
         var averageOfRecommendedGroups = getAverageOfAdjacentVectorsGrouping(recommendedAngles, maximumDegree+0.01f);
         averageOfRecommendedGroups.Sort((a,b)=>
             -priorityScoreCalculation(a,anglePriority).CompareTo(priorityScoreCalculation(b,anglePriority)));
+        throwIfAnyAngleIsNaN(averageOfRecommendedGroups);
         return averageOfRecommendedGroups;
+    }
+
+    private void throwIfAnyAngleIsNaN(AngleRecommendationsReturnType list) {
+        foreach (var i in list) {
+            if (Double.IsNaN(i.Item2))
+                throw new Exception("NaN is found");
+        }
     }
 
     public float getAverageAngleBasedOnRoadEdgeVectorDirections() {
@@ -127,16 +136,15 @@ public class SurroundingMap
 
         var best = ret.MaxBy(e => priorityScoreCalculation(e));
         ret = ret.Where(e
-            // filter only if difference is less than 10%
             => Math.Abs(best.Item1 - e.Item1) / best.Item1 < 0.15f
         ).ToList();
 
-        // ret.Sort((tuple1, tuple2) => -priorityScoreCalculation(tuple1).CompareTo(priorityScoreCalculation(tuple2)));
-        var mostRecommended = ret[0];
         return ret;
     }
 
     private AngleRecommendationsReturnType getAverageOfAdjacentVectorsGrouping(AngleRecommendationsReturnType angleRecommendations, float maximumAdjacentDegree) {
+        if (angleRecommendations.Count == 0)
+            return angleRecommendations;
         angleRecommendations = angleRecommendations.shallowCopy();
         angleRecommendations.Sort((tuple1, tuple2) => tuple1.Item2.CompareTo(tuple2.Item2));  // sort by angle
 
@@ -162,6 +170,7 @@ public class SurroundingMap
             angleOfPrevMember = angleRec.Item2;
         }
         averageResults.Add(multiplyTuple(summation, 1f/numberOfMembers));
+        throwIfAnyAngleIsNaN(averageResults);
         return averageResults;
     }
 

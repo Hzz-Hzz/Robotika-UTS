@@ -22,16 +22,19 @@ public class SteerDirectionManager
      * Warning: This method should be called at least once per frame, but won't make any changes if called multiple
      * times within the same frame.
      */
-    public void updateSteer(Transform currentState, Vector3 targetPosition)
-    {
+    public void updateSteer(Transform currentState, Vector3 targetPosition) {
+        var targetDirectionWithinPovOfCurrentState = currentState.InverseTransformPoint(targetPosition);
+        var targetAngle = Vector3.SignedAngle(Vector3.forward, targetDirectionWithinPovOfCurrentState, Vector3.up);
+        updateSteerBasedOnAngle(targetAngle);
+    }
+
+    public void updateSteerBasedOnAngle(float targetAngle) {
         if (lastFrameUpdate == Time.frameCount)
             return;
         // assert this method should be called at minimum once per frame
         Debug.Assert(lastFrameUpdate + 1 == Time.frameCount, $"{lastFrameUpdate+1} {Time.frameCount}");
         lastFrameUpdate = Time.frameCount;
 
-        var targetDirectionWithinPovOfCurrentState = currentState.InverseTransformPoint(targetPosition);
-        var targetAngle = Vector3.SignedAngle(Vector3.forward, targetDirectionWithinPovOfCurrentState, Vector3.up);
         var angleDifference = targetAngle - currentSteerAngle;
 
         var maximumAngleDistance = maxSteerAngularSpeed * Time.deltaTime;
@@ -42,7 +45,6 @@ public class SteerDirectionManager
         if (Math.Abs(newAngle) > maxSteerAngle)
             newAngle = Math.Sign(newAngle) * maxSteerAngle;
         currentSteerAngle = newAngle;
-        // Debug.Log($"{currentSteerAngle} {angleDifference/maximumAngleDistance} {maximumAngleDistance} {targetAngle}");
     }
 
     public float getSteerAngle()
