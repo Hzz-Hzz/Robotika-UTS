@@ -154,7 +154,7 @@ public class ViewModelVisualServer : INotifyPropertyChanged
             ImageSourceSurroundingMap = bitmap;
         }
 
-        return prevSurroundingMap.getCachedRecommendedIntersectionPoints();
+        return prevSurroundingMap.getMostRecommendedIntersectionPoints();
     }
 
     public SurroundingMap? prevSurroundingMap { get; set; }

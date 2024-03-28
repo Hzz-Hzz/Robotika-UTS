@@ -51,13 +51,17 @@ public class ContourPoint
     public Vector2 vector2 => new Vector2((float) X, (float) Y);
 
 
-    public bool isOutlier(double radiansThreshold) {
+    public double? getThisAngle() {
         if (link == null)
-            return false;
+            return null;
         if (backwardLink == null)
-            return false;
+            return null;
 
-        var thisAngle = calculateAngle(backwardLink, this, link);
+        return calculateAngle(backwardLink, this, link);
+    }
+
+    public bool isOutlier(double radiansThreshold) {
+        var thisAngle = getThisAngle();
         return thisAngle < radiansThreshold;
     }
 

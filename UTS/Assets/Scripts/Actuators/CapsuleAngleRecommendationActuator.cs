@@ -65,9 +65,7 @@ namespace Actuators
                 moveForwardSpeed = Math.Max(0.05f, (float)(maximumMoveForwardSpeed *farthestDistance / 0.5  * farthestDistance / 0.4));
             }
 
-            targetAngle = (float)recommendation.Average(e => e.Item2);  // average angle of selected ones
-
-
+            targetAngle = (float)recommendation[0].Item2;  // average angle of selected ones
             Debug.Log($"angle: {targetAngle:00.00}, dist: {farthestDistance:00.00} speed: {moveForwardSpeed:00.00}");
         }
 

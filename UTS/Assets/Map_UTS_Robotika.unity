@@ -14601,8 +14601,8 @@ MonoBehaviour:
   AngleRecommendationReceived:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 919132148351641326}
-        m_TargetAssemblyTypeName: Actuators.CarAngleRecommendationActuator, Assembly-CSharp
+      - m_Target: {fileID: 2011142732}
+        m_TargetAssemblyTypeName: Actuators.CapsuleAngleRecommendationActuator, Assembly-CSharp
         m_MethodName: OnReceiveAngleRecommendation
         m_Mode: 0
         m_Arguments:
@@ -28427,7 +28427,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2011142724
 Transform:
   m_ObjectHideFlags: 0
@@ -28556,7 +28556,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2011142723}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6ca914eb7b16465594218eab44ebdc0e, type: 3}
   m_Name: 
@@ -31740,7 +31740,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!54 &919132148351641324
 Rigidbody:
   m_ObjectHideFlags: 0

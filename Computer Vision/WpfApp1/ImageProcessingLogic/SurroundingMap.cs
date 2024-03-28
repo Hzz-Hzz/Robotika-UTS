@@ -1,3 +1,4 @@
+global using AngleRecommendation = System.Tuple<float, double, System.Numerics.Vector2>;
 global using AngleRecommendationsReturnType = System.Collections.Generic.List<System.Tuple<float, double, System.Numerics.Vector2>>;
 
 using System.Diagnostics;
@@ -8,6 +9,7 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using ImageProcessingLogic.TrainingDataExtractStrategy;
+using MathNet.Numerics;
 
 namespace WpfApp1;
 
@@ -19,7 +21,7 @@ public class SurroundingMap
     private const float worldSpaceEndX = 2;
     private const float worldSpaceStartY = 0;
     private const float worldSpaceEndY = 1;
-
+    private readonly float maximumDegree = (float) Math.PI / 36f;
 
 
     private static IContourPointTransformationDecorator _transformation = new TranslationToCartesiusDecorator(
@@ -39,7 +41,7 @@ public class SurroundingMap
             var angleRange = getMinAndMaxAngleFromContourPoints(roadEdgeList.contours);
 
             var rayCastLines = getCircleRayCastLines(origin, 10,
-                angleRange.Item1+0.01f, angleRange.Item2-0.01f, (float)Math.PI / 36);
+                angleRange.Item1+0.01f, angleRange.Item2-0.01f, maximumDegree);
             return rayCastLines;
         }
     }
@@ -50,8 +52,8 @@ public class SurroundingMap
     public void updateIntersectionPoints(bool includeAnglesThatDoesNotIntersects=true) {
         var rayCastLines = this.raycastLines;
         // to make a smooth angle recommendatin, we should include a perfect 90 degree raycast
-        rayCastLines.AddRange(getCircleRayCastLines(origin, 10, (float)Math.PI/2,
-            (float)Math.PI/2+0.001f, 10));
+        // rayCastLines.AddRange(getCircleRayCastLines(origin, 10, (float)Math.PI/2,
+            // (float)Math.PI/2+0.001f, 10));  // 10 is quite arbitrary
 
         var result = new List<ContourPoint>();
         foreach (var rayCastTarget in rayCastLines) {
@@ -87,8 +89,27 @@ public class SurroundingMap
     /**
      * See docs of calculateRecommendedIntersectionPoints
      */
-    public AngleRecommendationsReturnType getCachedRecommendedIntersectionPoints() {
-        return recommendedAngles;
+    public AngleRecommendationsReturnType getMostRecommendedIntersectionPoints() {
+        var anglePriority = getAverageAngleBasedOnRoadEdgeVectorDirections();
+        anglePriority = (float)(Math.PI / 2 - anglePriority);
+        // 0.01 to anticipate floating errors
+        var averageOfRecommendedGroups = getAverageOfAdjacentVectorsGrouping(recommendedAngles, maximumDegree+0.01f);
+        averageOfRecommendedGroups.Sort((a,b)=>
+            -priorityScoreCalculation(a,anglePriority).CompareTo(priorityScoreCalculation(b,anglePriority)));
+        return averageOfRecommendedGroups;
+    }
+
+    public float getAverageAngleBasedOnRoadEdgeVectorDirections() {
+        var sum = 0.0;
+        var count = 0;
+        foreach (var contourPoint in this.roadEdgeList.contours) {
+            var angle = contourPoint.getThisAngle();
+            if (angle == null) continue;
+            sum += angle.Value;
+            count++;
+        }
+        if (count == 0) return 0;
+        return (float)sum / count;
     }
 
     /**
@@ -101,24 +122,57 @@ public class SurroundingMap
     private AngleRecommendationsReturnType calculateRecommendedIntersectionPoints() {
         var ret = intersectionPoints.contours.Select(e => new Tuple<float, double, Vector2>(
             (e.vector2 - origin).Length(), e.vector2.getAngleBetween(Vector2.UnitY), e.vector2)).ToList();
-        ret.Sort((tuple1, tuple2) => -priorityScoreCalculation(tuple1).CompareTo(priorityScoreCalculation(tuple2)));
         if (ret.Count == 0)
             return ret;
-        var mostRecommended = ret[0];
-        return ret.Where(e
+
+        var best = ret.MaxBy(e => priorityScoreCalculation(e));
+        ret = ret.Where(e
             // filter only if difference is less than 10%
-            => Math.Abs(mostRecommended.Item1 - e.Item1) / mostRecommended.Item1 < 0.1f
+            => Math.Abs(best.Item1 - e.Item1) / best.Item1 < 0.15f
         ).ToList();
+
+        // ret.Sort((tuple1, tuple2) => -priorityScoreCalculation(tuple1).CompareTo(priorityScoreCalculation(tuple2)));
+        var mostRecommended = ret[0];
+        return ret;
+    }
+
+    private AngleRecommendationsReturnType getAverageOfAdjacentVectorsGrouping(AngleRecommendationsReturnType angleRecommendations, float maximumAdjacentDegree) {
+        angleRecommendations = angleRecommendations.shallowCopy();
+        angleRecommendations.Sort((tuple1, tuple2) => tuple1.Item2.CompareTo(tuple2.Item2));  // sort by angle
+
+        AngleRecommendationsReturnType averageResults = new();
+
+        var multiplyTuple = (AngleRecommendation t, float constant) =>
+            new AngleRecommendation(t.Item1 * constant, t.Item2 * constant, t.Item3 * constant);
+        var addTuple = (AngleRecommendation t, AngleRecommendation u) =>
+            new AngleRecommendation(t.Item1 + u.Item1, t.Item2 + u.Item2, t.Item3 + u.Item3);
+
+        var summation = new AngleRecommendation(0, 0, Vector2.Zero);
+        var numberOfMembers = 0;
+        double? angleOfPrevMember = null;
+        foreach (var angleRec in angleRecommendations) {
+            angleOfPrevMember ??= angleRec.Item2;  // useful for first iteration only
+            if (Math.Abs(angleRec.Item2 - angleOfPrevMember.Value) > maximumAdjacentDegree) {
+                averageResults.Add(multiplyTuple(summation, 1f/numberOfMembers));
+                summation = new AngleRecommendation(0, 0, Vector2.Zero);
+                numberOfMembers = 0;
+            }
+            summation = addTuple(summation, angleRec);
+            numberOfMembers++;
+            angleOfPrevMember = angleRec.Item2;
+        }
+        averageResults.Add(multiplyTuple(summation, 1f/numberOfMembers));
+        return averageResults;
     }
 
     // maximize score
-    private double priorityScoreCalculation(Tuple<float, double, Vector2> distanceAndAngle) {
+    private double priorityScoreCalculation(Tuple<float, double, Vector2> distanceAndAngle, float anglePriority=0) {
         var distance = distanceAndAngle.Item1;
         var angle = distanceAndAngle.Item2;
 
-        // prioritize the one closer to 0 degree (forward). So give negative sign to sort
-        // it ascendingly (because we will sort the overall score descendingly)
-        var angleStraightness = -Math.Abs(angle);
+        // anglePriority=0 means prioritize the one closer to 0 degree (straight forward).
+        // Give negative sign to sort it ascendingly (because we will sort the overall score descendingly)
+        var angleStraightness = -Math.Abs(angle - anglePriority);
 
         var distancePriorityWeight = 100;
         var distanceScore = distance * distancePriorityWeight;  // distance is more prioritized than angle straightness
@@ -200,7 +254,8 @@ public class SurroundingMap
         drawRaycastLinesUntilItsEnd(mat, originContourPoint, transformerToDrawOnMat);
         drawRaycastLinesUntilCollisionPoint(mat, originContourPoint, transformerToDrawOnMat);
         if (recommendedAngles.Count > 0) {
-            var mostRecommended = transformerToDrawOnMat._applyTransformation(null, recommendedAngles[0].Item3.toContourPoint());
+            var mostRecommended = transformerToDrawOnMat._applyTransformation(null,
+                getMostRecommendedIntersectionPoints()[0].Item3.toContourPoint());
             CvInvoke.Line(mat, originContourPoint.point,  mostRecommended!.point, new MCvScalar(0, 255, 0));
         }
     }
@@ -277,16 +332,16 @@ public static class Vector2ExtensionSurroundingMap
 {
     public static double getVectorAngle(this Vector2 from) {
         var ret = Math.Atan2(from.Y, from.X);
-        ret %= 360.0;
+        ret += 2 * Math.PI;
+        ret %= 2*Math.PI;
         return ret;
     }
 
     public static double getAngleBetween(this Vector2 from, Vector2 to, bool ignoreAngleDirection=false) {
         var ret = to.getVectorAngle() - from.getVectorAngle();
         if (ignoreAngleDirection) {
-            ret %= 360.0;
-            ret += 360.0;
-            ret %= 360.0;
+            ret += 2 * Math.PI;
+            ret %= 2*Math.PI;
         }
         return ret;
     }
@@ -294,4 +349,12 @@ public static class Vector2ExtensionSurroundingMap
     public static ContourPoint toContourPoint(this Vector2 vector2) {
         return new ContourPoint(vector2.X, vector2.Y, -1, null);
     }
+}
+
+public static class ListCopyExtension
+{
+    public static List<T> shallowCopy<T>(this List<T> list) {
+        return list.Select(e => e).ToList();
+    }
+
 }
