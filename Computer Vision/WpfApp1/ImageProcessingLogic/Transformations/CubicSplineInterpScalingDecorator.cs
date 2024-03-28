@@ -14,7 +14,7 @@ public class CubicSplineInterpScalingDecorator : IContourPointTransformationDeco
 
 
     private static readonly double[] y_pixel = {0.0, 350.0, 413.0, 437.0, 449.0, 457.0, 462.0, 466.0};
-    private static readonly double[] y_actual =   {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0};
+    private static readonly double[] y_actual =   {0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0};
     private static readonly double max_y_pixel;
     private CubicSpline y_pixel_to_y_actual =
         CubicSpline.InterpolatePchipSorted(y_pixel, y_actual);
@@ -79,6 +79,6 @@ public class CubicSplineInterpScalingDecorator : IContourPointTransformationDeco
 
         double xRatioPerQuarter = y_pixel_to_x_pixel_quarter_ratio.Interpolate(
             Math.Min(max_y_pixel, y_pixel));
-        return x_pixel * 0.25 / xRatioPerQuarter;
+        return x_pixel * 2.5 / xRatioPerQuarter;
     }
 }

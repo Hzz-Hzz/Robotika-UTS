@@ -143,7 +143,7 @@ public class ViewModelVisualServer : INotifyPropertyChanged
      */
     private AngleRecommendationsReturnType updateSurrondingMap(ContourList contourList, int rows, int cols) {
         prevSurroundingMap = SurroundingMap.fromCameraContourList(contourList);
-        prevSurroundingMap.updateIntersectionPoints();
+        prevSurroundingMap.updateIntersectionPoints(extensionLength: 0.1f);
 
         using (var mat = new Mat(rows, cols, DepthType.Cv8U, 3)) {
             mat.SetTo(new MCvScalar(0, 0, 0));

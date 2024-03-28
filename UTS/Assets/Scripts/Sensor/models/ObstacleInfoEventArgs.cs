@@ -23,6 +23,7 @@ namespace Sensor.models
             this.allowedToGoLeft = allowedToGoLeft;
             this.allowedToGoForward = allowedToGoForward;
             this.allowedToGoRight = allowedToGoRight;
+            this.shouldGoBackward = shouldGoBackward;
         }
 
         public static ObstacleInfoEventArgs NoObstacle([CanBeNull] UltrasonicSensorIntegration sensor) {

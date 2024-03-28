@@ -16,8 +16,8 @@ namespace Actuators
         public WheelCollider rightFront;
         public Rigidbody rigidBodyForSpeedSensor;
 
-        private MotorTorqueManager _motorTorqueManager = new MotorTorqueManager(55, 0.1f, 30);
-        private SteerDirectionManager _steerDirectionManager = new SteerDirectionManager(45, 50);
+        private MotorTorqueManager _motorTorqueManager = new MotorTorqueManager(75, 0.1f, 30);
+        private SteerDirectionManager _steerDirectionManagerObstacles = new SteerDirectionManager(45, 50);
         private ObstacleInfoEventArgs _obstacleInfoEventArgs;
         private SpeedSensor _speedSensor;
 
@@ -28,6 +28,8 @@ namespace Actuators
             _obstacleInfoEventArgs = ObstacleInfoEventArgs.NoObstacle(null);
             _speedSensor = new SpeedSensor(rigidBodyForSpeedSensor);
         }
+
+        private float? goBackwardUntilTimestamp = null;
 
         private void Update() {
             var angle = angleRecommendation;
@@ -45,14 +47,26 @@ namespace Actuators
             }
 
             float choosenAngle = _obstacleInfoEventArgs.shouldGoBackward? -angleRecommendation:angle;
-            _steerDirectionManager.updateSteerBasedOnAngle(choosenAngle);
-            var currentAngle = _steerDirectionManager.getSteerAngle();
+            _steerDirectionManagerObstacles.updateSteerBasedOnAngle(choosenAngle);
+            var currentAngle = _steerDirectionManagerObstacles.getSteerAngle();
             steerAngle = currentAngle;
             motorTorque = _motorTorqueManager.getMotorTorque(currentAngle);
-            if (_obstacleInfoEventArgs.shouldGoBackward)
-                motorTorque = -Math.Abs(motorTorque);
+            if (_obstacleInfoEventArgs.shouldGoBackward) {
+                goBackwardUntilTimestamp = Time.time + 3;
+            }
 
-            Debug.Log($"Recommended angle: {angleRecommendation:00.00}  actualAngle: {steerAngle:00.00} Speed: {_speedSensor.getCurrentSpeed():00.00}");
+            if (goBackwardUntilTimestamp != null) {
+                motorTorque = -Math.Max(Math.Abs(motorTorque), _motorTorqueManager.motorTorque / 2);
+                if (!_speedSensor.isGoingForward(transform))
+                    steerAngle = Math.Abs(steerAngle) > 10 ? steerAngle : Math.Sign(steerAngle) * 10;
+                if (goBackwardUntilTimestamp > Time.time)
+                    goBackwardUntilTimestamp = null;
+                if (_obstacleInfoEventArgs.forwardObstacleDistance < 2)
+                    goBackwardUntilTimestamp = Time.time + 3;  // refresh
+            }
+
+            Debug.Log($"Recommended angle: {angleRecommendation:00.00}  actualAngle: {steerAngle:00.00} " +
+                      $"Speed: {_speedSensor.getCurrentSpeed():00.00}  ObsDist: {_obstacleInfoEventArgs.forwardObstacleDistance:00.00}");
         }
 
         public void OnObstacleInfoUpdated(ObstacleInfoEventArgs obstacleInfoEvent) {

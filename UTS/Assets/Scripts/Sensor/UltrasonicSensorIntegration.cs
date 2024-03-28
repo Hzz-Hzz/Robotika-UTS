@@ -50,9 +50,15 @@ namespace Sensor
                 allowedLeft = false;
             if (rightCollisions != 0)
                 allowedRight = false;
+            var obstacleBlocksAllForwardSensor = !allowedLeft && !allowedRight;
             var obstacleBlocksAllForwardSensorButStillFarAway = (
-                !allowedLeft && !allowedRight && forwardObstacleETA > 1 && forwardObstacleDistance > 1);
-            if (obstacleBlocksAllForwardSensorButStillFarAway) {
+                obstacleBlocksAllForwardSensor && forwardObstacleETA > 1 && forwardObstacleDistance > 1);
+
+            if (obstacleBlocksAllForwardSensor) {
+                if (slopeOfObstacleIsGoingRightForward() ?? false)
+                    allowedRight = true;
+                else allowedLeft = true;
+            } else if (obstacleBlocksAllForwardSensorButStillFarAway) {
                 if (pureLeftCollisions > pureRightCollisions) // obstacle blocks left side more than right side
                     allowedRight = true;
                 else allowedLeft = true;
@@ -75,6 +81,23 @@ namespace Sensor
             rightSensorResults[0] = this.rightSensor0.detectDistance();
             rightSensorResults[1] = this.rightSensor1.detectDistance();
             rightSensorResults[2] = this.rightSensor2.detectDistance();
+        }
+
+        /**
+         * Return true if right forward (like slash do), or false if left-forward (like backslash do)
+         */
+        private bool? slopeOfObstacleIsGoingRightForward() {
+            var left = leftSensorResults[0] ?? midSensorResult;
+            if (left == null)
+                return null;
+            var right = rightSensorResults[0] ?? midSensorResult;
+            if (right == null)
+                return null;
+            if (left == right)
+                return null;
+            if (left < right)
+                return true;
+            return false;
         }
 
         public int pureLeftCollisions => leftSensorResults.Skip(1).Count(e => e != null);

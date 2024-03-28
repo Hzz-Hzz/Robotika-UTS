@@ -49,7 +49,7 @@ public class SurroundingMap
 
     private AngleRecommendationsReturnType recommendedAngles;
 
-    public void updateIntersectionPoints(bool includeAnglesThatDoesNotIntersects=true) {
+    public void updateIntersectionPoints(bool includeAnglesThatDoesNotIntersects=true, float extensionLength=0f) {
         var rayCastLines = this.raycastLines;
         // to make a smooth angle recommendatin, we should include a perfect 90 degree raycast
         // rayCastLines.AddRange(getCircleRayCastLines(origin, 10, (float)Math.PI/2,
@@ -57,7 +57,7 @@ public class SurroundingMap
 
         var result = new List<ContourPoint>();
         foreach (var rayCastTarget in rayCastLines) {
-            var raycastResult = roadEdgeList.getIntersectionPoints(origin, rayCastTarget);
+            var raycastResult = roadEdgeList.getIntersectionPoints(origin, rayCastTarget, extensionLength);
             var shortestCollisionPoint = selectClosestPoint(origin, raycastResult);
             if (shortestCollisionPoint != null)
                 result.Add(shortestCollisionPoint);

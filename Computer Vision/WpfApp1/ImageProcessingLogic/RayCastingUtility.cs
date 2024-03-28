@@ -15,14 +15,18 @@ public static class RayCastingUtility
                && isCounterClockwise(startLineA, endLineA, startLineB) != isCounterClockwise(startLineA, endLineA, endLineB);
     }
 
-    public static Vector2? getIntersectionPoint(Vector2 startLineA, Vector2 endLineA, Vector2 startLineB, Vector2 endLineB) {
+    public static Vector2? getIntersectionPoint(Vector2 startLineA, Vector2 endLineA, Vector2 startLineB,
+        Vector2 endLineB, float extensionLength=0.0f
+    ) {
         // if (!checkIfTwoLineIntersect(startLineA, endLineA, startLineB, endLineB))
             // return null;
 
         var p = startLineA;
         var pr = endLineA - startLineA;
+        pr = pr.getVectorOfSameDirection(pr.Length() + extensionLength);
         var q = startLineB;
         var qs = endLineB - startLineB;
+        qs = qs.getVectorOfSameDirection(qs.Length() + extensionLength);
 
         var prqsCrossProduct = pr.Cross(qs);
         var pqCrossPr = (q - p).Cross(pr);
@@ -67,11 +71,15 @@ public static class Vector2Extension
     public static float Cross(this Vector2 self, Vector2 other) {
         return self.X * other.Y - self.Y * other.X;
     }
+
+    public static Vector2 getVectorOfSameDirection(this Vector2 self, float newLength) {
+        return Vector2.Normalize(self) * newLength;
+    }
 }
 
 public static class ContourListExtension
 {
-    public static List<ContourPoint> getIntersectionPoints(this ContourList contourList, Vector2 startLineB, Vector2 endLineB) {
+    public static List<ContourPoint> getIntersectionPoints(this ContourList contourList, Vector2 startLineB, Vector2 endLineB, float extensionLength=0.0f) {
         var ret = new List<ContourPoint>();
 
         foreach (var contourPoint in contourList.contours) {
@@ -80,7 +88,8 @@ public static class ContourListExtension
             if (endLineA == null)
                 continue;
 
-            var intersectionPoint = RayCastingUtility.getIntersectionPoint(startLineA, endLineA.Value, startLineB, endLineB);
+            var intersectionPoint = RayCastingUtility.getIntersectionPoint(startLineA, endLineA.Value,
+                startLineB, endLineB, extensionLength);
             if (intersectionPoint != null)
                 ret.Add(new ContourPoint(intersectionPoint.Value.X, intersectionPoint.Value.Y, -1, null));
         }
