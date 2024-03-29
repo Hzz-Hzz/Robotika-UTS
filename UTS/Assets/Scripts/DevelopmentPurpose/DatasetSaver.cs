@@ -29,8 +29,8 @@ namespace DevelopmentPurpose
         }
 
 
-        private void OnImageUpdated(object sender, ImageUpdatedEventArgs eventArgs) {
-
+        public void OnImageUpdated(ImageUpdatedEventArgs eventArgs) {
+            saveDatasetTo(eventArgs.imageData);
         }
 
         private void saveDatasetTo(byte[] byteData, [CanBeNull] string datasetFolderPath = null) {
