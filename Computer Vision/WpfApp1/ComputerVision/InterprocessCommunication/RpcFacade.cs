@@ -48,7 +48,7 @@ public class RpcFacade
         server.onLog += (sender, msg) => Console.WriteLine(msg);
         server.onConnected += (e) => viewModelVisualServer.setStatusToClientConnected();
         server.onWaitingForClient += (_) => viewModelVisualServer.setStatusToWaitingForClient();
-        server.applyDefaultLoggingEvent();
+        server.applyDefaultLoggingEvent(receiveMessage: false);
 
         var interpWithTypes = new InterprocessCommunicationWithTypes(server);
         interprocessCommunication = new InterprocessCommunicationRpc<QueryCommandsEnum>(interpWithTypes);

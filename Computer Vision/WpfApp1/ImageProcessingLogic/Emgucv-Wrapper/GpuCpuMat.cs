@@ -10,7 +10,7 @@ using Emgu.Util;
 
 namespace WpfApp1.Emgucv_Wrapper;
 
-public class GpuCpuMat:
+public class GpuCpuMat :
     UnmanagedObject,
     IEquatable<Mat>,
     IEquatable<GpuMat>,
@@ -40,9 +40,18 @@ public class GpuCpuMat:
             mat.Dispose();
         }
     }
+
     public GpuCpuMat(Mat mat) {
         _cpuMat = mat;
         gpuMatIsActive = false;
+    }
+
+    public int NumberOfChannels {
+        get {
+            if (gpuMatIsActive)
+                return _gpuMat.NumberOfChannels;
+            return _cpuMat.NumberOfChannels;
+        }
     }
 
     public void SetTo(MCvScalar value, IInputArray mask = null) {
@@ -69,8 +78,11 @@ public class GpuCpuMat:
     }
 
     public static GpuCpuMat fromImage(Image<Bgr, byte> image, bool tryGpu=false) {
-        if (!tryGpu || !cudaAvailable)
-            return new GpuCpuMat(image.Mat);
+        if (!tryGpu || !cudaAvailable) {
+            var ret = new Mat();
+            image.Mat.CopyTo(ret);
+            return new GpuCpuMat(ret);
+        }
         var gpuMat = new GpuMat();
         gpuMat.Upload(image.Mat);
         return new GpuCpuMat(gpuMat);
@@ -120,7 +132,7 @@ public class GpuCpuMat:
     }
 
     public void CopyTo(IOutputArray dst, IInputArray mask = null, Stream stream = null) {
-        if (cudaAvailable)
+        if (gpuMatIsActive)
             _gpuMat.CopyTo(dst, mask, stream);
         else _cpuMat.CopyTo(dst, mask);
     }

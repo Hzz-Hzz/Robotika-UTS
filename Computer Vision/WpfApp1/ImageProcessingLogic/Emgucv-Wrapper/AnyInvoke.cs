@@ -47,6 +47,30 @@ public static class AnyInvoke
         CvInvoke.Add(a, b, outputMat);
     }
 
+    public static void Subtract(GpuCpuMat a, GpuCpuMat b, GpuCpuMat outputMat, bool preferGpu=true) {
+        if (preferGpu && cudaAvailable) {
+            tryToGpuMat(a, b, outputMat);
+        }
+        if (a.isGpu && b.isGpu && outputMat.isGpu) {
+            CudaInvoke.Subtract(a, b, outputMat);
+            return;
+        }
+        toCpuMat(a, b, outputMat);
+        CvInvoke.Subtract(a, b, outputMat);
+    }
+
+    public static void Multiply(GpuCpuMat a, GpuCpuMat b, GpuCpuMat outputMat, bool preferGpu=true) {
+        if (preferGpu && cudaAvailable) {
+            tryToGpuMat(a, b, outputMat);
+        }
+        if (a.isGpu && b.isGpu && outputMat.isGpu) {
+            CudaInvoke.Multiply(a, b, outputMat);
+            return;
+        }
+        toCpuMat(a, b, outputMat);
+        CvInvoke.Multiply(a, b, outputMat);
+    }
+
 
     public static void Threshold(GpuCpuMat inputMat, GpuCpuMat outputMat, double threshold, double maxValue, ThresholdType thresholdType, bool preferGpu=true) {
         if (preferGpu && cudaAvailable) {

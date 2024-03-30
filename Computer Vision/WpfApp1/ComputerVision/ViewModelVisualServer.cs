@@ -60,6 +60,7 @@ public class ViewModelVisualServer : INotifyPropertyChanged
     public BitmapImage ImageSourceRoadEdge {
         get { return ___imageSourceRoadEdge; }
         set {
+            value.Freeze();
             ___imageSourceRoadEdge = value;
             PropertyChanged(this, new PropertyChangedEventArgs("imageSourceRoadEdge"));
         }

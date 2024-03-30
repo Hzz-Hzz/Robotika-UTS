@@ -10,6 +10,7 @@ using Emgu.CV.Cuda;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
+using WpfApp1.Emgucv_Wrapper;
 using Image = System.Drawing.Image;
 using Point = System.Windows.Point;
 
@@ -28,24 +29,25 @@ public class MainRoadImageProcessing
         using (var gpuMat = imageToGpuMat(image))
             return processImage(gpuMat, returnMatOfBitmask);
     }
-    public Tuple<Mat, Mat> processImage(GpuMat gpuMat, bool returnMatOfBitmask=false)
+    public Tuple<Mat, Mat> processImage(GpuCpuMat gpuMat, bool returnMatOfBitmask=false)
     {
         using (var newGpuMat = filterByDistanceWithTargetColor(gpuMat, 130, 130, 130, 230))
         using (var newGpuMat2 = filterByDistanceWithTargetColor(gpuMat, 205, 205, 205, 230))
         using (var newGpuMat3 = filterByDistanceWithTargetColor(gpuMat, 50, 60, 70, 230))
-        using (var resultingMat = new Mat()) {
-            CudaInvoke.Max(newGpuMat, newGpuMat2, newGpuMat);
-            CudaInvoke.Max(newGpuMat, newGpuMat3, newGpuMat);
-            newGpuMat.Download(resultingMat);
+        {
+            AnyInvoke.Max(newGpuMat, newGpuMat2, newGpuMat);
+            AnyInvoke.Max(newGpuMat, newGpuMat3, newGpuMat);
+            newGpuMat.toCpuMat();
 
             var ret1 = new Mat();
-            resultingMat.CopyTo(ret1);
-            var ret2 = contourProcessor(resultingMat);
+            newGpuMat.CopyTo(ret1);
+            var ret2 = contourProcessor(newGpuMat);
             return new Tuple<Mat, Mat>(ret1, ret2);
         }
     }
 
-    public Mat contourProcessor(Mat mat) {
+    public Mat contourProcessor(GpuCpuMat mat) {
+        mat.toCpuMat();
         Mat ret = new Mat(mat.Size, DepthType.Cv8U, 3);
         ret.SetTo(new MCvScalar(0, 0, 0));
 
@@ -66,38 +68,40 @@ public class MainRoadImageProcessing
         return ret;
     }
 
-    private GpuMat filterByDistanceWithTargetColor(GpuMat gpuMat, int r, int g, int b, int threshold) {
-        var ret = new GpuMat();
+    private GpuCpuMat filterByDistanceWithTargetColor(GpuCpuMat gpuMat, int r, int g, int b, int threshold) {
+        var ret = new GpuCpuMat(new Mat());
+        ret.tryToGpu();
         gpuMat.CopyTo(ret);
 
-        using (var solidGrey = solidColorGpuMat(ret, r, g, b))
-        using (var solidWhite = solidColorGpuMat(ret, 255, 255, 255)) {
-            CudaInvoke.Absdiff(ret, solidGrey, ret);
-            CudaInvoke.Absdiff(ret, solidWhite, ret);
+        using (var solidGrey = GpuCpuMat.fromSolidColor(ret, new MCvScalar(b, g, r)))
+        using (var solidWhite = GpuCpuMat.fromSolidColor(ret, new MCvScalar(255, 255, 255))) {
+            AnyInvoke.Absdiff(ret, solidGrey, ret);
+            AnyInvoke.Absdiff(ret, solidWhite, ret);
             removeRedObjects(gpuMat, 235, 10);
 
-            CudaInvoke.CvtColor(ret, ret, ColorConversion.Bgr2Gray);
-            CudaInvoke.Threshold(ret, ret, threshold, 255, ThresholdType.ToZero);
+            AnyInvoke.CvtColor(ret, ret, ColorConversion.Bgr2Gray);
+            AnyInvoke.Threshold(ret, ret, threshold, 255, ThresholdType.ToZero);
             applyErrosion(ret);
             applyErrosion(ret);
-            CudaInvoke.CvtColor(ret, ret, ColorConversion.Gray2Bgr);
+            AnyInvoke.CvtColor(ret, ret, ColorConversion.Gray2Bgr);
         }
         return ret;
     }
 
-    private void removeRedObjects(GpuMat gpuMat, int minimumRedForPenalty, int penaltyMultiplier) {
+    private void removeRedObjects(GpuCpuMat gpuMat, int minimumRedForPenalty, int penaltyMultiplier) {
         var split = gpuMat.Split();  // bgr
-        var oldRed = new GpuMat();
+        var oldRed = new GpuCpuMat(new Mat());
+        oldRed.tryToGpu();
         split[2].CopyTo(oldRed);
 
-        using (var penaltyMinimum = solidColorGpuMat(gpuMat, minimumRedForPenalty))
-        using (var penaltyMultiplierMat = solidColorGpuMat(gpuMat, penaltyMultiplier))
+        using (var penaltyMinimum = GpuCpuMat.fromSolidColor(gpuMat, minimumRedForPenalty))
+        using (var penaltyMultiplierMat = GpuCpuMat.fromSolidColor(gpuMat, penaltyMultiplier))
         {
-            CudaInvoke.Subtract(split[2], penaltyMinimum, split[2]);
-            CudaInvoke.Multiply(split[2], penaltyMultiplierMat, split[2]);
+            AnyInvoke.Subtract(split[2], penaltyMinimum, split[2]);
+            AnyInvoke.Multiply(split[2], penaltyMultiplierMat, split[2]);
 
-            CudaInvoke.Subtract(split[0], split[2], split[0]);
-            CudaInvoke.Subtract(split[1], split[2], split[1]);
+            AnyInvoke.Subtract(split[0], split[2], split[0]);
+            AnyInvoke.Subtract(split[1], split[2], split[1]);
             split[2] = oldRed;
         }
         gpuMat.MergeFrom(split);
@@ -105,7 +109,7 @@ public class MainRoadImageProcessing
 
 
 
-    private void applyErrosion(GpuMat targetMat) {
+    private void applyErrosion(GpuCpuMat targetMat) {
         var splittedChannel = targetMat.Split();
         var singleChannel = splittedChannel[0];
 
@@ -114,10 +118,8 @@ public class MainRoadImageProcessing
         var kernel = CvInvoke.GetStructuringElement(ElementShape.Rectangle, kernelSize, anchor);
 
         // open fitler is doing Erode, then Dilatation
-        var openFilter = new CudaMorphologyFilter(MorphOp.Erode, singleChannel.Depth, singleChannel.NumberOfChannels, kernel, anchor, 3);
-
-
-        openFilter.Apply(singleChannel, singleChannel);
+        AnyInvoke.MorphologyEx(singleChannel, singleChannel,MorphOp.Erode, kernel, anchor, 3,
+            singleChannel.Depth, singleChannel.NumberOfChannels );
         for (int i = 0; i < targetMat.NumberOfChannels; i++) {
             splittedChannel[i] = singleChannel;
         }
@@ -133,38 +135,12 @@ public class MainRoadImageProcessing
     }
 
 
-    static GpuMat imageToGpuMat(Image<Bgr, byte> image)
-    {
-        var gpuMat = new GpuMat();
-        gpuMat.Upload(image);
-        return gpuMat;
+    static GpuCpuMat imageToGpuMat(Image<Bgr, byte> image) {
+        var ret = GpuCpuMat.fromImage(image);
+        ret.tryToGpu();
+        return ret;
     }
 
-
-    static GpuMat solidColorGpuMat(GpuMat gpuMatSpec, int r, int g, int b)
-    {
-        MCvScalar color = new MCvScalar(b, g, r);
-        Mat cpuMat = new Mat(gpuMatSpec.Size, gpuMatSpec.Depth, 3);
-        cpuMat.SetTo(color);
-
-        GpuMat gpuMat = new GpuMat();
-        gpuMat.Upload(cpuMat);
-
-        cpuMat.Dispose();
-        return gpuMat;
-    }
-    static GpuMat solidColorGpuMat(GpuMat gpuMatSpec, int value)
-    {
-        MCvScalar color = new MCvScalar(value);
-        Mat cpuMat = new Mat(gpuMatSpec.Size, gpuMatSpec.Depth, 1);
-        cpuMat.SetTo(color);
-
-        GpuMat gpuMat = new GpuMat();
-        gpuMat.Upload(cpuMat);
-
-        cpuMat.Dispose();
-        return gpuMat;
-    }
 
 
     static BitmapImage matToImageSource(Mat mat)

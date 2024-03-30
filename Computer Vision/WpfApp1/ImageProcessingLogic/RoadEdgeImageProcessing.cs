@@ -10,6 +10,7 @@ using Emgu.CV.Cuda;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
+using WpfApp1.Emgucv_Wrapper;
 using Image = System.Drawing.Image;
 using Point = System.Windows.Point;
 
@@ -54,7 +55,9 @@ public class RoadEdgeImageProcessing
 
             substractRedChannelFromMaxOfBlueAndGreen(gpuMat);
             applyMorphologyEx(gpuMat);
-            gpuMat.Download(resultingMat);
+            gpuMat.toCpuMat();
+            gpuMat.CopyTo(resultingMat);
+
 
             var contours = new VectorOfVectorOfPoint();
             CvInvoke.FindContours(resultingMat, contours, null,
@@ -77,8 +80,8 @@ public class RoadEdgeImageProcessing
 
 
 
-    private void applyMorphologyEx(GpuMat targetMat) {
-        CudaInvoke.CvtColor(targetMat, targetMat, ColorConversion.Bgr2Gray);
+    private void applyMorphologyEx(GpuCpuMat targetMat) {
+        AnyInvoke.CvtColor(targetMat, targetMat, ColorConversion.Bgr2Gray);
         var splittedChannel = targetMat.Split();
         var singleChannel = splittedChannel[0];
 
@@ -87,14 +90,13 @@ public class RoadEdgeImageProcessing
         var kernel = CvInvoke.GetStructuringElement(ElementShape.Rectangle, kernelSize, anchor);
 
         // open fitler is doing Erode, then Dilatation
-        var openFilter = new CudaMorphologyFilter(MorphOp.Open, singleChannel.Depth, singleChannel.NumberOfChannels, kernel, anchor, 1);
+        AnyInvoke.MorphologyEx(singleChannel, singleChannel,
+            MorphOp.Open, kernel, anchor, 1, singleChannel.Depth, singleChannel.NumberOfChannels);
 
         kernelSize = new System.Drawing.Size(5, 1);
         kernel = CvInvoke.GetStructuringElement(ElementShape.Rectangle, kernelSize, anchor);
-        var openFilter2 = new CudaMorphologyFilter(MorphOp.Open, singleChannel.Depth, singleChannel.NumberOfChannels, kernel, anchor, 1);
-
-        openFilter.Apply(singleChannel, singleChannel);
-        openFilter2.Apply(singleChannel, singleChannel);
+        AnyInvoke.MorphologyEx(singleChannel, singleChannel,
+            MorphOp.Open, kernel, anchor, 1, singleChannel.Depth, singleChannel.NumberOfChannels);
 
         for (int i = 0; i < targetMat.NumberOfChannels; i++) {
             splittedChannel[i] = singleChannel;
@@ -102,17 +104,17 @@ public class RoadEdgeImageProcessing
         targetMat.MergeFrom(splittedChannel);
     }
 
-    private void substractRedChannelFromMaxOfBlueAndGreen(GpuMat targetMat)
+    private void substractRedChannelFromMaxOfBlueAndGreen(GpuCpuMat targetMat)
     {
-        using (var max = new GpuMat())
-        using (var identity = solidColorGpuMat(targetMat, 1))
+        using (var max = new GpuCpuMat(new Mat()))
         {
+            max.tryToGpu();
             var split = targetMat.Split();  // BGR
 
-            CudaInvoke.Max(split[0], split[1], max);
-            CudaInvoke.Subtract(split[2], max, split[2]);
+            AnyInvoke.Max(split[0], split[1], max);
+            AnyInvoke.Subtract(split[2], max, split[2]);
 
-            CudaInvoke.Threshold(split[2], split[2], 30, 255, ThresholdType.ToZero);
+            AnyInvoke.Threshold(split[2], split[2], 30, 255, ThresholdType.ToZero);
             split[0] = split[2];
             split[1] = split[2];
             targetMat.MergeFrom(split);
@@ -120,11 +122,10 @@ public class RoadEdgeImageProcessing
     }
 
 
-    static GpuMat imageToGpuMat(Image<Bgr, byte> image)
-    {
-        var gpuMat = new GpuMat();
-        gpuMat.Upload(image);
-        return gpuMat;
+    static GpuCpuMat imageToGpuMat(Image<Bgr, byte> image) {
+        var ret = GpuCpuMat.fromImage(image);
+        ret.tryToGpu();
+        return ret;
     }
 
 
@@ -154,7 +155,7 @@ public class RoadEdgeImageProcessing
     }
 
 
-    static BitmapImage matToImageSource(Mat mat)
+    public static BitmapImage matToImageSource(Mat mat)
     {
         var bitmap = mat.ToImage<Bgr, Byte>().ToBitmap();
         return ImageUtility.BitmapToImageSource(bitmap);
