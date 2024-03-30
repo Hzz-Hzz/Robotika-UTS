@@ -60,7 +60,7 @@ public class ContourList
             var contour = ContourPoint.fromVectorOfPoint(rawContours[i]);
             if (contour == null)
                 continue;
-            if (contour.area < 40)
+            if (contour.area < 5)
                 continue;
             _contours.Add(contour);
         }

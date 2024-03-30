@@ -16,7 +16,8 @@ namespace Actuators
         public WheelCollider rightFront;
         public Rigidbody rigidBodyForSpeedSensor;
 
-        private MotorTorqueManager _motorTorqueManager = new MotorTorqueManager(75, 0.1f, 30);
+        private ConstSpeedTorqueManager _torqueManager;
+        // private MotorTorqueManager _motorTorqueManager = new MotorTorqueManager(75, 0.1f, 30);
         private SteerDirectionManager _steerDirectionManagerObstacles = new SteerDirectionManager(45, 240);
         private ObstacleInfoEventArgs _obstacleInfoEventArgs;
         private SpeedSensor _speedSensor;
@@ -24,12 +25,13 @@ namespace Actuators
         private Quaternion originalCameraRotationRelativeToParent;
         private float targetCameraRotation = 0.0f;
         public GameObject camera;
-        private SteerDirectionManager cameraRotationManager = new SteerDirectionManager(20, 35);
+        private SteerDirectionManager cameraRotationManager = new SteerDirectionManager(60, 50);
         private float targetCarAngleBasedOnRecommendationAndCamRotation => cameraRotationManager.getSteerAngle()+angleRecommendation;
 
 
         private CarAngularSteeringDegreeCalculator _angularDegreeSteeringCalculator = new CarAngularSteeringDegreeCalculator(
             0.7, 2.88, 0.83, 1.98, 3.5 + 0.1);
+
 
         private Vector3 direction;
 
@@ -39,6 +41,8 @@ namespace Actuators
             _speedSensor = new SpeedSensor(rigidBodyForSpeedSensor);
             camera = GetComponentsInChildren<Camera>().First().gameObject;
             originalCameraRotationRelativeToParent = camera.transform.localRotation;
+
+            _torqueManager = new ConstSpeedTorqueManager(_speedSensor, 150, 8, 20, 0.4f, 45);
         }
 
         private float? goBackwardUntilTimestamp = null;
@@ -54,7 +58,7 @@ namespace Actuators
             float choosenAngle = _obstacleInfoEventArgs.shouldGoBackward? -targetCarAngleBasedOnRecommendationAndCamRotation:angle;
             _steerDirectionManagerObstacles.updateSteerBasedOnAngle(choosenAngle);
             steerAngle = _steerDirectionManagerObstacles.getSteerAngle();
-            motorTorque = _motorTorqueManager.getMotorTorque(steerAngle);
+            motorTorque = _torqueManager.getMotorTorque(targetCarAngleBasedOnRecommendationAndCamRotation);
 
             handleGoingBackwardBecauseWhenObstacleAlreadyHit();
             updateCameraRotation();
@@ -81,10 +85,12 @@ namespace Actuators
             if (!_obstacleInfoEventArgs.allowedToGoRight && angle > 0)
                 angle = -1;
 
-            _angularDegreeSteeringCalculator.updateSteeringDirection(targetCarAngleBasedOnRecommendationAndCamRotation);
-            _angularDegreeSteeringCalculator.updateObstacleDistance(_obstacleInfoEventArgs.forwardObstacleDistance ?? Double.PositiveInfinity);
-            if (!_angularDegreeSteeringCalculator.willHitObstacle())
-                return angle;
+            // _angularDegreeSteeringCalculator.updateSteeringDirection(targetCarAngleBasedOnRecommendationAndCamRotation);
+            // _angularDegreeSteeringCalculator.updateObstacleDistance(_obstacleInfoEventArgs.forwardObstacleDistance ?? Double.PositiveInfinity);
+            // if (!_angularDegreeSteeringCalculator.willHitObstacle())
+                // return angle;
+                if (_obstacleInfoEventArgs.forwardObstacleETA > 2 && _obstacleInfoEventArgs.forwardObstacleDistance > 4)
+                    return angle;
 
             if (!_obstacleInfoEventArgs.allowedToGoForward) {
                 var jaga_jaga = 3;
@@ -107,7 +113,7 @@ namespace Actuators
                 goBackwardUntilTimestamp = Time.time + 1;
             }
             if (goBackwardUntilTimestamp != null && Time.time < goBackwardUntilTimestamp) {
-                motorTorque = -_motorTorqueManager.motorTorque;
+                motorTorque = -_torqueManager.motorTorque;
                 if (_speedSensor.isGoingForward(transform) || _speedSensor.getCurrentSpeed() < 0.5)
                     goBackwardUntilTimestamp = Time.time + 1;  // refresh
             } else if (Time.time < goBackwardUntilTimestamp + 1) {

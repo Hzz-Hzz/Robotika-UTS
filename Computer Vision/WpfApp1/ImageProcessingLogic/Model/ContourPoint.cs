@@ -119,4 +119,18 @@ public class ContourPoint
         var P13 = p1.distance(p3);
         return Math.Acos((P12 * P12 + P23 * P23 - P13 * P13) / (2 * P12 * P23));
     }
+
+    public static bool inTheSameLink(ContourPoint a, ContourPoint b) {
+        if (a == null || b == null)
+            return false;
+        var currA = a;
+        var currB = b;
+        while (currA.link != null) {
+            currA = currA.link;
+        }
+        while (currB.link != null) {
+            currB = currB.link;
+        }
+        return currA == currB;
+    }
 }

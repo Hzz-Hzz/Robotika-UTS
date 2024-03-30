@@ -59,7 +59,7 @@ public class RpcFacade
         var server = new InterprocessCommunicationClient("NuelValenRobotik");
         server.onLog += (sender, msg) => Debug.Log(msg);
         server.onDisconnected += (sender, exception) => showConnectionError();
-        server.applyDefaultLoggingEvent();
+        server.applyDefaultLoggingEvent(receiveMessage: false);
 
         var interpWithTypes = new InterprocessCommunicationWithTypes(server);
         interprocessCommunication = new InterprocessCommunicationRpc<QueryCommandsEnum>(interpWithTypes);

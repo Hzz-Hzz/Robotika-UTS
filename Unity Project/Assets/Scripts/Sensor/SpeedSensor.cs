@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace Sensor
@@ -13,7 +14,8 @@ namespace Sensor
             return rigidbody.velocity.magnitude;
         }
 
-        public bool isGoingForward(Transform transform) {
+        public bool isGoingForward([CanBeNull] Transform transform=null) {
+            transform ??= rigidbody.gameObject.transform;
             return Vector3.Dot(transform.forward, rigidbody.velocity) > 0;
         }
     }

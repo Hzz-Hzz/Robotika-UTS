@@ -631,7 +631,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 25660972}
   m_LocalRotation: {x: 0, y: -0.08715578, z: 0, w: 0.9961947}
-  m_LocalPosition: {x: -0.998, y: 0.821, z: 2.461}
+  m_LocalPosition: {x: -0.9760001, y: 0.821, z: 2.333}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -650,7 +650,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1857dae6c787f15448ff77a07d6ff4c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sensorLength: 10
+  sensorLength: 6
 --- !u!1 &27335837
 GameObject:
   m_ObjectHideFlags: 0
@@ -4439,7 +4439,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 290756778}
   m_LocalRotation: {x: 0, y: 0.08715578, z: 0, w: 0.9961947}
-  m_LocalPosition: {x: 0.998, y: 0.821, z: 2.461}
+  m_LocalPosition: {x: 1.02, y: 0.821, z: 2.333}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4458,7 +4458,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1857dae6c787f15448ff77a07d6ff4c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sensorLength: 10
+  sensorLength: 6
 --- !u!1 &297228755
 GameObject:
   m_ObjectHideFlags: 0
@@ -6391,7 +6391,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 429631861}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.998, y: 0.821, z: 2.461}
+  m_LocalPosition: {x: 1.02, y: 0.821, z: 2.333}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7459,7 +7459,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 463831688}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.005, y: 0.821, z: 2.461}
+  m_LocalPosition: {x: 0.026999954, y: 0.821, z: 2.333}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -8863,6 +8863,7 @@ GameObject:
   - component: {fileID: 591678614}
   - component: {fileID: 591678615}
   - component: {fileID: 591678616}
+  - component: {fileID: 591678617}
   m_Layer: 0
   m_Name: Tronco Collider
   m_TagString: Untagged
@@ -8894,7 +8895,7 @@ MeshCollider:
   m_GameObject: {fileID: 591678613}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 4
   m_Convex: 1
   m_CookingOptions: 30
@@ -8912,6 +8913,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   blacklistTag: 
+--- !u!65 &591678617
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 591678613}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 1.95, y: 1, z: 4.4}
+  m_Center: {x: 0, y: 1.1, z: -0.05}
 --- !u!1001 &596843248
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9146,7 +9160,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1857dae6c787f15448ff77a07d6ff4c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sensorLength: 12
+  sensorLength: 6
 --- !u!1 &624770337
 GameObject:
   m_ObjectHideFlags: 0
@@ -14300,7 +14314,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1857dae6c787f15448ff77a07d6ff4c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sensorLength: 12
+  sensorLength: 7
 --- !u!1 &962919490
 GameObject:
   m_ObjectHideFlags: 0
@@ -25792,7 +25806,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1745697785}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.998, y: 0.821, z: 2.461}
+  m_LocalPosition: {x: -0.9760001, y: 0.821, z: 2.333}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

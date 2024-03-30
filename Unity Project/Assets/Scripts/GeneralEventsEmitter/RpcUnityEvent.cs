@@ -58,7 +58,7 @@ namespace InterprocessCommunication
                 angleRecommendation = angleRecommendation
                     .Select(e => new Tuple<float, double, Vector2>(
                         e.Item1, 180 * e.Item2 / Math.PI, e.Item3)).ToList();
-                tryToDirectTheCarToMiddleOfRoad(angleRecommendation, closestRoadEdgeInformationTask.Result);
+                // tryToDirectTheCarToMiddleOfRoad(angleRecommendation, closestRoadEdgeInformationTask.Result);
                 AngleRecommendationReceived?.Invoke(new AngleRecommendationReceivedEventArgs{
                     recomomendations = angleRecommendation
                 });
