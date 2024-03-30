@@ -37,6 +37,7 @@ namespace DatasetEditor
         }
 
         private void MainWindow_OnLoaded(object sender, RoutedEventArgs e) {
+            _viewModelDatasetEditor.prevDataset();
             _viewModelDatasetEditor.nextDataset();
             updateLabel();
         }
@@ -76,6 +77,46 @@ namespace DatasetEditor
         private void updateLabel() {
             datasetLabel.Text = $"angle={datasetLabelModel.angle} speed={datasetLabelModel.speed}";
             this.Title = $"{_viewModelDatasetEditor.datasetId}.png";
+        }
+
+
+        private void UIElement_OnMouseMove(object sender, MouseEventArgs e)
+        {
+            var senderUiElement = sender as Image;
+            if (senderUiElement == null)
+                throw new Exception("Null UIElement UIElement_OnMouseMove");
+            var coord = GetImageCoordsAt(e, senderUiElement);
+            var source = senderUiElement.Source as BitmapImage;
+            if (source == null)
+                throw new Exception("Null source UIElement_OnMouseMove");
+            var color = getImageColor(source, coord);
+            colorInformation.Text = $"({coord.X}, {coord.Y}) --> RGB({color.Red}, {color.Green}, {color.Blue})";
+        }
+        public ImageUtility.PixelColor getImageColor(BitmapImage img, Point point) {
+            return ImageUtility.GetPixels(img)[(int) point.X, (int) point.Y];
+        }
+        public Point GetImageCoordsAt(MouseEventArgs e, UIElement targetElement) {
+            if (targetElement.IsMouseOver)
+            {
+                var controlSpacePosition = e.GetPosition(targetElement);
+                var imageControl = targetElement as Image;
+                if (imageControl != null && imageControl.Source != null)
+                {
+                    // Convert from control space to image space
+                    var x = Math.Floor(controlSpacePosition.X * imageControl.Source.Width / imageControl.ActualWidth);
+                    var y = Math.Floor(controlSpacePosition.Y * imageControl.Source.Height / imageControl.ActualHeight);
+
+                    return new Point(x, y);
+                }
+            }
+            return new Point(-1, -1);
+        }
+
+        private void MainWindow_OnKeyUp(object sender, KeyEventArgs e) {
+            if (e.Key == Key.Q)
+                _viewModelDatasetEditor.prevDataset();
+            if (e.Key == Key.E)
+                _viewModelDatasetEditor.nextDataset(skipAlreadyDefinedLabel: false);
         }
     }
 }

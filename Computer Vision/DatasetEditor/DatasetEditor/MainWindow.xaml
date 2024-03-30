@@ -7,33 +7,31 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DatasetEditor"
         mc:Ignorable="d"
+        KeyUp="MainWindow_OnKeyUp"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
+            <!-- <RowDefinition Height="Auto" /> -->
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
 
 
-        <TextBlock Grid.Row="0" Grid.Column="0" Name="datasetLabel" Text="{Binding status}" />
-        <TextBlock Grid.Row="0" Grid.Column="1" Name="datasetId" TextAlignment="Right"/>
+        <UniformGrid Columns="3">
+            <TextBlock Name="datasetLabel" Text="{Binding status}"/>
+            <TextBlock Text="{Binding datasetIdLabel}" TextAlignment="Center"/>
+            <TextBlock Name="colorInformation" TextAlignment="Right"/>
+        </UniformGrid>
+        <UniformGrid Grid.Row="2"  Rows="2">
+            <Image Name="processedImageRoadEdge" Source="{Binding imageSourceRoadEdge}" MouseMove="UIElement_OnMouseMove"/>
+            <!-- <Image Grid.Row="1" Grid.Column="2" Name="processedImageRoadMain" Source="{Binding imageSourceRoadMain}" MouseMove="UIElement_OnMouseMove" /> -->
+            <Image Name="originalImage" Source="{Binding imageSourceOriginal}" MouseMove="UIElement_OnMouseMove"/>
+        </UniformGrid>
 
 
-        <Image Grid.Row="1" Name="processedImageRoadEdge" Source="{Binding imageSourceRoadEdge}"></Image>
-        <!-- <Image Grid.Row="1" Grid.Column="2" Name="processedImageRoadMain" Source="{Binding imageSourceRoadMain}" MouseMove="UIElement_OnMouseMove" /> -->
 
-
-        <Grid Grid.Row="2" >
-            <!-- <Line Name="line" Stroke="Red" StrokeThickness="1" X1="0" Y1="0" X2="100" Y2="100" /> -->
-            <Image Name="originalImage" Source="{Binding imageSourceOriginal}"></Image>
-        </Grid>
-
-        <TextBlock Grid.Row="3" Text="{Binding status}">---</TextBlock>
     </Grid>
 </Window>

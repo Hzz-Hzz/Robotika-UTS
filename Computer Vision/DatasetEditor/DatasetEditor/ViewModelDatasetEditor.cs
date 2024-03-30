@@ -22,6 +22,7 @@ namespace WpfApp1;
 public class ViewModelDatasetEditor : INotifyPropertyChanged
 {
     public int datasetId = 0;
+    public string datasetIdLabel => $"{datasetId}";
     public static readonly string datasetFolder = "H:\\01_Kuliah\\01_Dokumen\\22 - Robotika\\02 Tugas Unity\\10 Persiapan UTS\\UTS template\\dataset";
     public int maxFileNo;
 
@@ -75,16 +76,37 @@ public class ViewModelDatasetEditor : INotifyPropertyChanged
 
 
     public String status {get;set;}
+    private ObstacleImageProcessing _obstacleImageProcessing = new ();
     private RoadEdgeImageProcessing _roadEdgeImageProcessing = new ();
     private MainRoadImageProcessing _mainRoadImageProcessing = new ();
 
 
     public ViewModelDatasetEditor() {
         maxFileNo = Int32.Parse(File.ReadAllText(Path.Join(datasetFolder, "-fileno")));
+        if (File.Exists(Path.Join(datasetFolder, "-lastfileno")))
+            datasetId = Int32.Parse(File.ReadAllText(Path.Join(datasetFolder, "-lastfileno")));
+    }
+
+    public void prevDataset() {
+        var prevId = datasetId;
+        while (true) {
+            datasetId--;
+            datasetId = (datasetId + maxFileNo) % maxFileNo;
+            if (File.Exists(Path.Join(datasetFolder, $"{datasetId}.png"))) {
+                break;
+            }
+            if (datasetId == prevId)
+                break;
+        }
+        File.WriteAllText(Path.Join(datasetFolder, "-lastfileno"), datasetId.ToString());
+        processDataset(datasetId);
+        PropertyChanged(this, new PropertyChangedEventArgs("datasetIdLabel"));
     }
 
     public void nextDataset(int increment = 1, bool skipAlreadyDefinedLabel=true) {
+        var prevDatasetId = datasetId;
         datasetId += increment;
+        datasetId %= maxFileNo;
         while (true) {
             bool datasetIdChanged = false;
             while (!File.Exists(Path.Join(datasetFolder, $"{datasetId}.png")) && datasetId+1 <= maxFileNo) {
@@ -96,14 +118,15 @@ public class ViewModelDatasetEditor : INotifyPropertyChanged
                 datasetIdChanged = true;
             }
 
-            if (datasetId + 1 > maxFileNo) {
-                datasetId = maxFileNo;
+            if (datasetId == prevDatasetId) {
                 MessageBox.Show("End of dataset");
                 break;
             }
             if (!datasetIdChanged) break;
         }
+        File.WriteAllText(Path.Join(datasetFolder, "-lastfileno"), datasetId.ToString());
         processDataset(datasetId);
+        PropertyChanged(this, new PropertyChangedEventArgs("datasetIdLabel"));
     }
 
     private void processDataset(int datasetId) {
@@ -113,7 +136,8 @@ public class ViewModelDatasetEditor : INotifyPropertyChanged
 
         try {
             var origImage = ImageUtility.BitmapToImageSource(image.ToBitmap());
-            var resultingRoadEdgeImage = _roadEdgeImageProcessing.processImageAsBitmap(image);
+            // var resultingRoadEdgeImage = _roadEdgeImageProcessing.processImageAsBitmap(image);
+            var resultingRoadEdgeImage = _obstacleImageProcessing.processImageAsBitmap(image);
 
             origImage.Freeze();
             resultingRoadEdgeImage.Freeze();
