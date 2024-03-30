@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using UnityEditor;
 using UnityEngine;
 
 
@@ -45,7 +46,7 @@ public class RpcFacade
             QueryCommandsEnum.GET_ROAD_EDGE_DISTANCES);
     }
 
-
+    public readonly Func<bool> isConnected;
 
 
     #region otherDeclarations
@@ -57,12 +58,20 @@ public class RpcFacade
 
         var server = new InterprocessCommunicationClient("NuelValenRobotik");
         server.onLog += (sender, msg) => Debug.Log(msg);
+        server.onDisconnected += (sender, exception) => showConnectionError();
         server.applyDefaultLoggingEvent();
 
         var interpWithTypes = new InterprocessCommunicationWithTypes(server);
         interprocessCommunication = new InterprocessCommunicationRpc<QueryCommandsEnum>(interpWithTypes);
         interprocessCommunication.doNotSendErrorOnAlreadyClosedPipe = true;
         registerMethods();
+        isConnected = () => server.isConnected;
+    }
+
+    public static void showConnectionError() {
+        EditorUtility.DisplayDialog("Cant connect to visual server",
+            "Mohon jangan lupa jalanin visual servernya Kak, untuk memproses visual dari kamera mobil " +
+            "(sudah izin ke Pak Wisnu terkait keterbatasan ini kak)", "ok");
     }
 
     public void startListening() {

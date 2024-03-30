@@ -30,6 +30,7 @@ namespace InterprocessCommunication
             _rpcFacade = new RpcFacade();
             _rpcFacade.startListening();
             StartCoroutine(sendImageDataToServerAndGetFeedback());
+            StartCoroutine(detectConnectionErrorCoroutine());
         }
 
         public void OnImageUpdated(ImageUpdatedEventArgs imageData) {
@@ -101,6 +102,11 @@ namespace InterprocessCommunication
             _rpcFacade.stopListening();
         }
 
+        private IEnumerator detectConnectionErrorCoroutine() {
+            yield return new WaitForSeconds(4);
+            if (!_rpcFacade.isConnected())
+                RpcFacade.showConnectionError();
+        }
     }
 
     public static class TaskToCoroutineExtension {
@@ -122,6 +128,7 @@ namespace InterprocessCommunication
                 throw task.Exception;
             }
         }
+
 
     }
 }
