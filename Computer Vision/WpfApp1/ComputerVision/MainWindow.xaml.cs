@@ -63,7 +63,6 @@ namespace WpfApp1
             {
                 var controlSpacePosition = e.GetPosition(targetElement);
                 var imageControl = targetElement as Image;
-                var mainViewModel = ((ViewModelVisualServer)base.DataContext);
                 if (imageControl != null && imageControl.Source != null)
                 {
                     // Convert from control space to image space
