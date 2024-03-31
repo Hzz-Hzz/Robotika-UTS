@@ -26,8 +26,11 @@ public class ContourPoint
             if (_link != null)
                 _link._backwardLink = null;
             _link = value;
-            if (value != null)
+            if (value != null) {
+                if (value._backwardLink != null)
+                    value._backwardLink._link = null;
                 value._backwardLink = this;
+            }
         }
     }
 
@@ -36,11 +39,15 @@ public class ContourPoint
             return _backwardLink;
         }
         set {
-            if (_backwardLink != null)
+            if (_backwardLink != null) {
                 _backwardLink._link = null;
+            }
             _backwardLink = value;
-            if (value != null)
+            if (value != null) {
+                if (value._link != null)
+                    value._link._backwardLink = null;
                 value._link = this;
+            }
         }
     }
 

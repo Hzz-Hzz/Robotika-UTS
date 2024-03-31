@@ -21,6 +21,7 @@ public class SendCarView : MonoBehaviour
 
     public int maximumFPS = 20;
     public bool keepRunningWhenEditorIsPaused = true;
+    public bool hideFromMainCamera = true;
 
 
     private Camera targetCameraGameobject;
@@ -73,7 +74,11 @@ public class SendCarView : MonoBehaviour
 
     public void publishEvent(bool paused) {
         try {
+            targetCameraGameobject.enabled = true;
             cameraTexture2D = CamCapture(cameraTexture2D);
+            if (hideFromMainCamera)
+                targetCameraGameobject.enabled = false;
+
             cameraSceneBytesData = cameraTexture2D.EncodeToPNG();
             ImageUpdated?.Invoke(new ImageUpdatedEventArgs() {
                 imageData = cameraSceneBytesData,

@@ -95,14 +95,17 @@ public static class ContourListExtension
         }
         return ret;
     }
-    public static List<ContourPoint> getClosestIntersectionPointsTowardCircle(this ContourList contourList, Vector2 startLine, Vector2 endLine, float radius,
-        float minimumIntersectionDistance
+    public static List<ContourPoint> getClosestIntersectionPointsTowardCircle(
+        this ContourList contourList, Vector2 startLine, Vector2 endLine, float radius,
+        float minimumIntersectionDistance, Func<ContourPoint, bool>? condition=null
     ) {
+        condition ??= (_) => true;
         var ret = new List<ContourPoint>();
 
         foreach (var contourPoint in contourList.contours) {
+            if (!condition.Invoke(contourPoint))
+                continue;
             var circleCxCy = contourPoint.vector2;
-
             var intersectionPoint = CircleRadiusIntersection.ClosestIntersection(circleCxCy, radius, startLine, endLine);
             if (intersectionPoint != null && (intersectionPoint - startLine).Value.Length() >= minimumIntersectionDistance)
                 ret.Add(new ContourPoint(intersectionPoint.Value.X, intersectionPoint.Value.Y, -1, null));

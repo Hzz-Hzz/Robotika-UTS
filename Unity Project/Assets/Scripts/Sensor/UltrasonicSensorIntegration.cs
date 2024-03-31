@@ -86,7 +86,7 @@ namespace Sensor
         /**
          * Return true if right forward (like slash do), or false if left-forward (like backslash do)
          */
-        private bool? slopeOfObstacleIsGoingRightForward() {
+        public bool? slopeOfObstacleIsGoingRightForward() {
             var left = leftSensorResults[0] ?? midSensorResult;
             if (left == null)
                 return null;

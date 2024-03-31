@@ -50,7 +50,10 @@ namespace InterprocessCommunication
 
                 var angleRecommendationTask = _rpcFacade.getAngleRecommendation(imageData);
                 var closestRoadEdgeInformationTask = _rpcFacade.getClosestSurrounding();
-                yield return Task.WhenAll(angleRecommendationTask, closestRoadEdgeInformationTask).toCoroutine();
+                var verticallyClosestRoadEdgeInformationTask = _rpcFacade.getVerticallyClosestSurrounding();
+                var isOffRoadTask = _rpcFacade.isOffRoad();
+                yield return Task.WhenAll(angleRecommendationTask, closestRoadEdgeInformationTask,
+                    verticallyClosestRoadEdgeInformationTask, isOffRoadTask).toCoroutine();
 
                 var angleRecommendation = angleRecommendationTask.Result;
                 if (angleRecommendation == null)
@@ -60,7 +63,10 @@ namespace InterprocessCommunication
                         e.Item1, 180 * e.Item2 / Math.PI, e.Item3)).ToList();
                 // tryToDirectTheCarToMiddleOfRoad(angleRecommendation, closestRoadEdgeInformationTask.Result);
                 AngleRecommendationReceived?.Invoke(new AngleRecommendationReceivedEventArgs{
-                    recomomendations = angleRecommendation
+                    recomomendations = angleRecommendation,
+                    horizontallyClosestRoadLeftRightEdge = closestRoadEdgeInformationTask.Result,
+                    verticallyClosestRoadLeftRightEdge = verticallyClosestRoadEdgeInformationTask.Result,
+                    isOffRoad = isOffRoadTask.Result,
                 });
             }
         }

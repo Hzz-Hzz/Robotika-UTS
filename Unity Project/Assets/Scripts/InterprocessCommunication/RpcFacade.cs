@@ -45,6 +45,14 @@ public class RpcFacade
         return interprocessCommunication.call<Tuple<Vector2?, Vector2?>>(
             QueryCommandsEnum.GET_ROAD_EDGE_DISTANCES);
     }
+    public Task<Tuple<Vector2?, Vector2?>> getVerticallyClosestSurrounding() {
+        return interprocessCommunication.call<Tuple<Vector2?, Vector2?>>(
+            QueryCommandsEnum.GET_ROAD_EDGE_DISTANCES_CHOOSE_VERTICALLY_CLOSEST_LEFT_RIGHT);
+    }
+    public Task<bool> isOffRoad() {
+        return interprocessCommunication.call<bool>(
+            QueryCommandsEnum.IS_OFF_ROAD);
+    }
 
     public readonly Func<bool> isConnected;
 

@@ -18,6 +18,8 @@ public class RpcFacade
     private void registerMethods() {
         interprocessCommunication.registerMethod(QueryCommandsEnum.GET_ANGLE_RECOMMENDATION, getAngleRecommendation);
         interprocessCommunication.registerMethod(QueryCommandsEnum.GET_ROAD_EDGE_DISTANCES, getClosestSurrounding);
+        interprocessCommunication.registerMethod(QueryCommandsEnum.GET_ROAD_EDGE_DISTANCES_CHOOSE_VERTICALLY_CLOSEST_LEFT_RIGHT, getVerticallyClosestSurrounding);
+        interprocessCommunication.registerMethod(QueryCommandsEnum.IS_OFF_ROAD, isOffRoad);
     }
 
 
@@ -35,6 +37,15 @@ public class RpcFacade
         if (viewModelVisualServer.prevSurroundingMap == null)
             return new Tuple<Vector2?, Vector2?>(Vector2.Zero, Vector2.Zero);
         return viewModelVisualServer.prevSurroundingMap.getHorizontallyClosestPointOnLeftAndOnRight();
+    }
+    public Tuple<Vector2?, Vector2?> getVerticallyClosestSurrounding() {
+        if (viewModelVisualServer.prevSurroundingMap == null)
+            return new Tuple<Vector2?, Vector2?>(Vector2.Zero, Vector2.Zero);
+        var result = viewModelVisualServer.prevSurroundingMap.getVerticallyClosestPointOnLeftAndOnRight();
+        return new Tuple<Vector2?, Vector2?>(result.Item1?.vector2, result.Item2?.vector2);
+    }
+    public bool isOffRoad() {
+        return viewModelVisualServer.prevSurroundingMap?.offroad ?? false;
     }
 
 

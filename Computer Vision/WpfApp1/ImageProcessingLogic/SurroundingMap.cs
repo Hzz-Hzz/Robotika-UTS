@@ -1,6 +1,6 @@
 global using AngleRecommendation = System.Tuple<float, double, System.Numerics.Vector2>;
 global using AngleRecommendationsReturnType = System.Collections.Generic.List<System.Tuple<float, double, System.Numerics.Vector2>>;
-
+using System.Collections;
 using System.Diagnostics;
 using System.Drawing;
 using System.Numerics;
@@ -22,7 +22,7 @@ public class SurroundingMap
     private const float worldSpaceStartY = 0;
     private const float worldSpaceEndY = 10;
     private readonly float maximumDegree = (float) Math.PI / 36f;
-    private readonly float contourPointCircleRadius = 1f;
+    private readonly float contourPointCircleRadius = 0f;
     private readonly float contourPointCircleRadiusMinimumIntersectionDistance = 0;
 
     private static IContourPointTransformationDecorator _transformation = new TranslationToCartesiusDecorator(
@@ -41,9 +41,11 @@ public class SurroundingMap
     private List<Vector2> raycastLines {
         get {
             var angleRange = getMinAndMaxAngleFromContourPoints(roadEdgeList.contours);
+            if (angleRange.Item1 == null || angleRange.Item2 == null)
+                return new List<Vector2>();
 
             var rayCastLines = getCircleRayCastLines(origin, raycastLength,
-                angleRange.Item1+0.01f, angleRange.Item2-0.01f, maximumDegree);
+                angleRange.Item1!.Value+0.01f, angleRange.Item2!.Value-0.01f, maximumDegree);
             return rayCastLines;
         }
     }
@@ -58,7 +60,7 @@ public class SurroundingMap
             // (float)Math.PI/2+0.001f, 10));  // 10 is quite arbitrary
 
         var result = new List<ContourPoint>();
-        offroad = false;
+        _offroad = false;
         var closestVertically = getVerticallyClosestPointOnLeftAndOnRight();
         var closestX = Math.Min(Math.Abs(closestVertically.Item1?.X ?? Double.PositiveInfinity),
             Math.Abs(closestVertically.Item2?.X ?? Double.PositiveInfinity));
@@ -68,7 +70,8 @@ public class SurroundingMap
 
             if (closestX > contourPointCircleRadius)
                 raycastResult.AddRange(roadEdgeList.getClosestIntersectionPointsTowardCircle(origin,
-                rayCastTarget, contourPointCircleRadius, contourPointCircleRadiusMinimumIntersectionDistance));
+                rayCastTarget, contourPointCircleRadius, contourPointCircleRadiusMinimumIntersectionDistance,
+                (cp) => cp.link==null||cp.backwardLink==null));
             ifOneRayIntersectsTwoPointFartherThanThresholdMeansWeReOffRoad(raycastResult);
             var shortestCollisionPoint = selectClosestPoint(origin, raycastResult);
             if (shortestCollisionPoint != null)
@@ -78,11 +81,12 @@ public class SurroundingMap
         }
         intersectionPoints = new ContourList(result, -1, -1);
         recommendedAngles = calculateRecommendedIntersectionPoints();
-        // if (offroad)
-            // handleOffRoadByModifyingRecommendedAngles();
+        if (_offroad)
+            handleOffRoadByModifyingRecommendedAngles();
     }
 
-    private bool offroad = false;
+    private bool _offroad = false;
+    public bool offroad => _offroad;
     private void ifOneRayIntersectsTwoPointFartherThanThresholdMeansWeReOffRoad(List<ContourPoint> raycastResult) {
         var horizontallyClosest = getVerticallyClosestPointOnLeftAndOnRight();
         if (horizontallyClosest.Item1 != null
@@ -95,7 +99,7 @@ public class SurroundingMap
         for (int i = 1; i < raycastResult.Count; i++) {
             if (distanceFromOrigin(raycastResult[i]) -
                 distanceFromOrigin(raycastResult[i - 1]) > threshold) {
-                offroad = true;
+                _offroad = true;
                 ContourPoint.inTheSameLink(horizontallyClosest.Item1, horizontallyClosest.Item2);
             }
         }
@@ -155,8 +159,6 @@ public class SurroundingMap
      * See docs of calculateRecommendedIntersectionPoints
      */
     public AngleRecommendationsReturnType getMostRecommendedIntersectionPoints() {
-        var angleRangeLeftRight = getMinAndMaxAngleFromContourPoints(roadEdgeList.contours);
-        var angleRange = Math.Abs(angleRangeLeftRight.Item1 - angleRangeLeftRight.Item2);
 
         var anglePriority = getAverageAngleBasedOnRoadEdgeVectorDirections();
 
@@ -300,17 +302,19 @@ public class SurroundingMap
         return (contourPoint.vector2 - origin.Value).Length();
     }
 
-    private static Tuple<float, float> getMinAndMaxAngleFromContourPoints(List<ContourPoint> contourPoints) {
-        double min = Math.PI/2;
-        double max = Math.PI/2;  // 90 degree initial point
+    private static Tuple<float?, float?> getMinAndMaxAngleFromContourPoints(List<ContourPoint> contourPoints) {
+        double? min = null;
+        double? max = null;  // 90 degree initial point
 
         foreach (var contourPoint in contourPoints) {
             var angle = contourPoint.vector2.getVectorAngle();
-            min = Math.Min(min, angle);
-            max = Math.Max(max, angle);
+            min ??= angle;
+            max ??= angle;
+            min = Math.Min(min!.Value, angle);
+            max = Math.Max(max!.Value, angle);
         }
 
-        return new Tuple<float, float>((float)min, (float)max);
+        return new Tuple<float?, float?>((float?)min, (float?)max);
     }
 
 

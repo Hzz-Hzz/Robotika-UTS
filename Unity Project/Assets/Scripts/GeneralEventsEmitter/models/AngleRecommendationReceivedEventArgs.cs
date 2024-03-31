@@ -19,5 +19,9 @@ namespace EventsEmitter.models
          * For more updated information, please see getAngleRecommendation() at Server's C# project, file: RpcFacade.cs
         */
         public List<Tuple<float, double, Vector2>> recomomendations;
+
+        public Tuple<Vector2?, Vector2?> verticallyClosestRoadLeftRightEdge { get; set; }
+        public Tuple<Vector2?,Vector2?> horizontallyClosestRoadLeftRightEdge { get; set; }
+        public bool isOffRoad { get; set; }
     }
 }
