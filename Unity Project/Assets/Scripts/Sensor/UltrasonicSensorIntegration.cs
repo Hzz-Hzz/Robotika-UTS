@@ -66,7 +66,7 @@ namespace Sensor
 
             if (!allowedLeft && !allowedForward && !allowedRight)
                 shouldGoBackward = true;
-            if (forwardObstacleDistance < 1 || forwardObstacleETA < 1) {  // go bakcward
+            if (forwardObstacleDistance < 0.8 || forwardObstacleETA < 0.3) {  // go bakcward
                 shouldGoBackward = true;
             }
             ObstacleInfoUpdated?.Invoke(new ObstacleInfoEventArgs(this, forwardObstacleDistance,

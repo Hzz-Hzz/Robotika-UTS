@@ -29,6 +29,7 @@ namespace Actuators
         private float targetCarAngleBasedOnRecommendationAndCamRotation => cameraRotationManager.getSteerAngle()+angleRecommendation;
 
 
+        private readonly float backwardTorque = 80;
         private CarAngularSteeringDegreeCalculator _angularDegreeSteeringCalculator = new CarAngularSteeringDegreeCalculator(
             0.7, 2.88, 0.83, 1.98, 3.5 + 0.1);
 
@@ -42,14 +43,22 @@ namespace Actuators
             camera = GetComponentsInChildren<Camera>().First().gameObject;
             originalCameraRotationRelativeToParent = camera.transform.localRotation;
 
-            _torqueManager = new ConstSpeedTorqueManager(_speedSensor, 150, 8, 20, 0.4f, 45);
+            _torqueManager = new ConstSpeedTorqueManager(_speedSensor, 180, -1, 30,
+                0.4f, 45);
         }
 
         private float? goBackwardUntilTimestamp = null;
 
         private void Update() {
             var slope = Vector3.Angle(new Vector3(transform.forward.x, 0, transform.forward.z),
-                transform.forward);  // unused for now
+                transform.forward);
+            if (slope >= 2)
+                _torqueManager.maxSpeed = 7;
+            else if (slope >= 0.25)
+                _torqueManager.maxSpeed = 5;
+            else _torqueManager.maxSpeed = 8;
+
+             // unused for now
             _speedSensor ??= new SpeedSensor(rigidBodyForSpeedSensor);
 
             var angle = targetCarAngleBasedOnRecommendationAndCamRotation;
@@ -57,14 +66,28 @@ namespace Actuators
 
             float choosenAngle = _obstacleInfoEventArgs.shouldGoBackward? -targetCarAngleBasedOnRecommendationAndCamRotation:angle;
             _steerDirectionManagerObstacles.updateSteerBasedOnAngle(choosenAngle);
-            steerAngle = _steerDirectionManagerObstacles.getSteerAngle();
+            // steerAngle = _steerDirectionManagerObstacles.getSteerAngle();
+            steerAngle = (Math.Abs(angle)<=45)? angle : Math.Sign(angle)*45;
             motorTorque = _torqueManager.getMotorTorque(targetCarAngleBasedOnRecommendationAndCamRotation);
+            brakeIfFreeFalling();
 
             handleGoingBackwardBecauseWhenObstacleAlreadyHit();
             updateCameraRotation();
             Debug.Log($"Recommended: (angle:{targetCarAngleBasedOnRecommendationAndCamRotation:00.00},l:{angleRecommendationCollisionLength:00.00}) " +
                       $"actualAngle: {steerAngle:00.00} " +
                       $"Speed: {_speedSensor.getCurrentSpeed():00.00}  ObsDist: {_obstacleInfoEventArgs.forwardObstacleDistance:00.00}");
+        }
+
+        private void brakeIfFreeFalling() {
+            if (freeFallEventArgs.numOfFreeFall < 3) {
+                leftBack.brakeTorque = 0;
+                rightBack.brakeTorque = 0;
+                return;
+            }
+            Debug.Log("Free falling");
+            leftBack.brakeTorque = motorTorque;
+            rightBack.brakeTorque = motorTorque;
+            motorTorque = 0;
         }
 
         private void updateCameraRotation() {
@@ -79,25 +102,33 @@ namespace Actuators
                 Color.yellow);
         }
 
+        private float doNotUseRoadRecommendation = -1;
         private float turnLeftOrRightIfObstacleWillBeHit(float angle) {
-            if (!_obstacleInfoEventArgs.allowedToGoLeft && angle < 0)
-                angle = 1;
-            if (!_obstacleInfoEventArgs.allowedToGoRight && angle > 0)
-                angle = -1;
+            _angularDegreeSteeringCalculator.updateObstacleDistance(_obstacleInfoEventArgs.forwardObstacleDistance ?? Double.PositiveInfinity);
+            var targetCarRotationIsExtreme = Math.Abs(targetCarAngleBasedOnRecommendationAndCamRotation) > 15
+                                             && angleRecommendationCollisionLength >= 2;
+            var doNotOverrideAngle = targetCarRotationIsExtreme
+                                     && _angularDegreeSteeringCalculator.getRecommendedAlpha1ToAvoidObstacle() < 40
+                                     && _obstacleInfoEventArgs.forwardObstacleETA > 1
+                                     && Time.time > doNotUseRoadRecommendation;
+            if (!_obstacleInfoEventArgs.allowedToGoLeft && angle < 0 && !doNotOverrideAngle)
+                angle = 0;
+            if (!_obstacleInfoEventArgs.allowedToGoRight && angle > 0 && !doNotOverrideAngle)
+                angle = 0;
 
             // _angularDegreeSteeringCalculator.updateSteeringDirection(targetCarAngleBasedOnRecommendationAndCamRotation);
             // _angularDegreeSteeringCalculator.updateObstacleDistance(_obstacleInfoEventArgs.forwardObstacleDistance ?? Double.PositiveInfinity);
             // if (!_angularDegreeSteeringCalculator.willHitObstacle())
                 // return angle;
-                if (_obstacleInfoEventArgs.forwardObstacleETA > 2 && _obstacleInfoEventArgs.forwardObstacleDistance > 4)
-                    return angle;
+            // if (_obstacleInfoEventArgs.forwardObstacleETA > 1 && _obstacleInfoEventArgs.forwardObstacleDistance > 3)
+                // return angle;
 
             if (!_obstacleInfoEventArgs.allowedToGoForward) {
-                var jaga_jaga = 3;
+                var jaga_jaga = 5;
                 var targetAngle = jaga_jaga + _angularDegreeSteeringCalculator.getRecommendedAlpha1ToAvoidObstacle();
-                if (!_obstacleInfoEventArgs.allowedToGoLeft)
+                if (!_obstacleInfoEventArgs.allowedToGoLeft && !doNotOverrideAngle)
                     angle = targetAngle;
-                else if (!_obstacleInfoEventArgs.allowedToGoRight)
+                else if (!_obstacleInfoEventArgs.allowedToGoRight && !doNotOverrideAngle)
                     angle = -targetAngle;
                 else  // can go left or right
                     angle = Math.Sign(targetCarAngleBasedOnRecommendationAndCamRotation) * targetAngle;
@@ -110,22 +141,30 @@ namespace Actuators
             if (_obstacleInfoEventArgs.forwardObstacleDistance == null)
                 return;
             if (_obstacleInfoEventArgs.shouldGoBackward) {
-                goBackwardUntilTimestamp = Time.time + 1;
+                goBackwardUntilTimestamp = Time.time + 2;
+                doNotUseRoadRecommendation = Time.time + 6;
             }
             if (goBackwardUntilTimestamp != null && Time.time < goBackwardUntilTimestamp) {
-                motorTorque = -_torqueManager.motorTorque;
-                if (_speedSensor.isGoingForward(transform) || _speedSensor.getCurrentSpeed() < 0.5)
-                    goBackwardUntilTimestamp = Time.time + 1;  // refresh
-            } else if (Time.time < goBackwardUntilTimestamp + 1) {
-                if (!_speedSensor.isGoingForward(transform))
-                    steerAngle = Math.Abs(steerAngle) > 10 ? steerAngle : -Math.Sign(steerAngle) * 10;
-                else
-                    steerAngle = Math.Abs(steerAngle) > 10 ? steerAngle : Math.Sign(steerAngle) * 10;
+                motorTorque = -backwardTorque;
+                if (_speedSensor.isGoingForward(transform) || _speedSensor.getCurrentSpeed() < 0.5) {
+                    goBackwardUntilTimestamp = Time.time + 2;  // refresh
+                    doNotUseRoadRecommendation = Time.time + 6;
+                }
+            } else if (Time.time < goBackwardUntilTimestamp + 2) {
+                // if (!_speedSensor.isGoingForward(transform))
+                    // steerAngle = Math.Abs(steerAngle) > 20 ? steerAngle : -Math.Sign(steerAngle) * 20;
+                // else
+                    // steerAngle = Math.Abs(steerAngle) > 20 ? steerAngle : Math.Sign(steerAngle) * 20;
             }
         }
 
         public void OnObstacleInfoUpdated(ObstacleInfoEventArgs obstacleInfoEvent) {
             _obstacleInfoEventArgs = obstacleInfoEvent;
+        }
+
+        private FreeFallStateChangedEventArgs freeFallEventArgs;
+        public void OnFreeFallingStateChanged(FreeFallStateChangedEventArgs eventArgs) {
+            freeFallEventArgs = eventArgs;
         }
 
         private float angleRecommendation = 0;
