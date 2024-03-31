@@ -117,7 +117,10 @@ public class ContourPoint
         var P12 = p1.distance(p2);
         var P23 = p2.distance(p3);
         var P13 = p1.distance(p3);
-        return Math.Acos((P12 * P12 + P23 * P23 - P13 * P13) / (2 * P12 * P23));
+        var ret = Math.Acos((P12 * P12 + P23 * P23 - P13 * P13) / (2 * P12 * P23));
+        if (Double.IsNaN(ret))  // for example if the three points form a single line
+            return 0;
+        return ret;
     }
 
     public static bool inTheSameLink(ContourPoint a, ContourPoint b) {

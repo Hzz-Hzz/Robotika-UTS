@@ -9,13 +9,15 @@ public class SteerDirectionManager
     float maxSteerAngle;
     float maxSteerAngularSpeed;  // angular per second
     float currentSteerAngle = 0.0f;
+    public float goingZeroMultiplier { get; set; }
 
     private int lastFrameUpdate = 0;
 
-    public SteerDirectionManager(float maxSteerAngle, float maxSteerAngularSpeed)
+    public SteerDirectionManager(float maxSteerAngle, float maxSteerAngularSpeed, float goingZeroMultiplier=1)
     {
         this.maxSteerAngle = maxSteerAngle;
         this.maxSteerAngularSpeed = maxSteerAngularSpeed;
+        this.goingZeroMultiplier = goingZeroMultiplier;
     }
 
     /**
@@ -37,7 +39,12 @@ public class SteerDirectionManager
 
         var angleDifference = targetAngle - currentSteerAngle;
 
+
         var maximumAngleDistance = maxSteerAngularSpeed * Time.deltaTime;
+        var goingZero = Math.Abs(targetAngle) < Math.Abs(currentSteerAngle) ||
+                        Math.Sign(targetAngle) != Math.Sign(currentSteerAngle);
+        if (goingZero)
+            maximumAngleDistance *= goingZeroMultiplier;  // not perfect but ok
         if (Math.Abs(angleDifference) > maximumAngleDistance)
             angleDifference = Math.Sign(angleDifference) * maximumAngleDistance;
 

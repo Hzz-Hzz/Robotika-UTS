@@ -25,7 +25,7 @@ namespace Actuators
         private Quaternion originalCameraRotationRelativeToParent;
         private float targetCameraRotation = 0.0f;
         public GameObject camera;
-        private SteerDirectionManager cameraRotationManager = new SteerDirectionManager(60, 50);
+        private SteerDirectionManager cameraRotationManager = new SteerDirectionManager(60, 8, 5);
         private float targetCarAngleBasedOnRecommendationAndCamRotation => cameraRotationManager.getSteerAngle()+angleRecommendation;
 
 
@@ -69,8 +69,8 @@ namespace Actuators
 
         private void updateCameraRotation() {
             // biar ga pusin kameranya goyang kiri kanan
-            var target = (Math.Abs(targetCameraRotation) < 3)? 0 : targetCameraRotation;
-
+            var target = (Math.Abs(targetCarAngleBasedOnRecommendationAndCamRotation) < 3)?
+                0 : targetCarAngleBasedOnRecommendationAndCamRotation;
             cameraRotationManager.updateSteerBasedOnAngle(target);
             camera.transform.localRotation = originalCameraRotationRelativeToParent
                                         *Quaternion.AngleAxis(cameraRotationManager.getSteerAngle(), Vector3.up);
@@ -133,6 +133,11 @@ namespace Actuators
         public void OnReceiveAngleRecommendation(AngleRecommendationReceivedEventArgs e) {
             if (e.recomomendations.Count == 0) {
                 Debug.Log("Recommendation array is empty");
+                return;
+            }
+
+            if (Math.Abs(e.recomomendations[0].Item2)>360) {
+                Debug.Log($"Angle recommendation buggy: {e.recomomendations[0].Item2}");
                 return;
             }
             angleRecommendationCollisionLength = e.recomomendations[0].Item1;

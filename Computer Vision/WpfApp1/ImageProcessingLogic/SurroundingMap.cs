@@ -102,6 +102,7 @@ public class SurroundingMap
             recommendedAngles[i] = new AngleRecommendation(rec.Item1,
                 angleSign*(60 - Math.Abs(avgAngle)), rec.Item3);
         }
+        throwIfAnyAngleIsNaN(recommendedAngles);
         Console.WriteLine($"OFFROAD  {getAverageAngleBasedOnRoadEdgeVectorDirections()}");
     }
 
