@@ -630,14 +630,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 25660972}
-  m_LocalRotation: {x: 0, y: -0.08715578, z: 0, w: 0.9961947}
+  m_LocalRotation: {x: 0.022166418, y: -0.087134205, z: 0.0019393112, w: 0.9959481}
   m_LocalPosition: {x: -0.9760001, y: 0.821, z: -0.16}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1693072744}
   m_RootOrder: 5
-  m_LocalEulerAnglesHint: {x: 0, y: -10, z: 0}
+  m_LocalEulerAnglesHint: {x: 2.55, y: -10, z: 0}
 --- !u!114 &25660974
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -650,7 +650,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1857dae6c787f15448ff77a07d6ff4c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sensorLength: 9
+  sensorLength: 11
 --- !u!1 &27335837
 GameObject:
   m_ObjectHideFlags: 0
@@ -4438,14 +4438,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 290756778}
-  m_LocalRotation: {x: 0, y: 0.08715578, z: 0, w: 0.9961947}
+  m_LocalRotation: {x: 0.022166418, y: 0.087134205, z: -0.0019393112, w: 0.9959481}
   m_LocalPosition: {x: 1.02, y: 0.821, z: -0.16}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1693072744}
   m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 0, y: 10, z: 0}
+  m_LocalEulerAnglesHint: {x: 2.55, y: 10, z: 0}
 --- !u!114 &290756780
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4458,7 +4458,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1857dae6c787f15448ff77a07d6ff4c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sensorLength: 9
+  sensorLength: 11
 --- !u!1 &297228755
 GameObject:
   m_ObjectHideFlags: 0
@@ -32713,9 +32713,9 @@ GameObject:
   m_Component:
   - component: {fileID: 543450652355099729}
   - component: {fileID: 919132148351641324}
-  - component: {fileID: 919132148351641325}
   - component: {fileID: 919132148351641326}
   - component: {fileID: 919132148351641327}
+  - component: {fileID: 919132148351641328}
   m_Layer: 0
   m_Name: BlueCar
   m_TagString: Untagged
@@ -32739,21 +32739,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 1
---- !u!114 &919132148351641325
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 919132148351641323}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0dc28242cd72d6c499de4e7c34991802, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  path: {fileID: 0}
-  LeftWheel: {fileID: 216740998}
-  RightWheel: {fileID: 726895845}
 --- !u!114 &919132148351641326
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -32785,6 +32770,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   customCenterOfMass: {x: 0, y: 0.5, z: -0.9}
+--- !u!114 &919132148351641328
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 919132148351641323}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 552a3ab80294400eaa83147bcdaecb7f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  MaxFPS: 1
+  saveDataset: 0
+  datasetFolderPath: H:\01_Kuliah\01_Dokumen\22 - Robotika\02 Tugas Unity\10 Persiapan
+    UTS\UTS Ngerjain\dataset
+  keyToToggleSaveDataset: p
 --- !u!23 &938806992698495438
 MeshRenderer:
   m_ObjectHideFlags: 0

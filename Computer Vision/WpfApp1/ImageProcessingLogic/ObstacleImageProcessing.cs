@@ -28,7 +28,7 @@ public class ObstacleImageProcessing
             filterObstacleBasedOnColorSimilarity(img, obstacle2);
             filterObstacleBasedOnColorSimilarity(img, obstacle3, 245);
             filterObstacleBasedOnColorSimilarity(img, obstacle4, 230);
-            filterObstacleBasedOnColorSimilarity(img, obstacle5, 240);
+            filterObstacleBasedOnColorSimilarity(img, obstacle5, 230);
 
             AnyInvoke.Max(obstacle1, obstacle2, obstacle1);
             AnyInvoke.Max(obstacle1, obstacle3, obstacle1);
@@ -38,7 +38,7 @@ public class ObstacleImageProcessing
 
             Point anchor = new Point(-1, -1);
             var kernel = CvInvoke.GetStructuringElement(ElementShape.Rectangle, new Size(7, 7), anchor);
-            AnyInvoke.MorphologyEx(obstacle1, obstacle1, MorphOp.Erode, kernel, anchor, 3, DepthType.Cv8U, 1);
+            AnyInvoke.MorphologyEx(obstacle1, obstacle1, MorphOp.Erode, kernel, anchor, 2, DepthType.Cv8U, 1);
             AnyInvoke.MorphologyEx(obstacle1, obstacle1, MorphOp.Dilate, kernel, anchor, 2, DepthType.Cv8U, 1);
             AnyInvoke.CvtColor(obstacle1, obstacle1, ColorConversion.Gray2Bgr);
 

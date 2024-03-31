@@ -137,7 +137,7 @@ public class ViewModelDatasetEditor : INotifyPropertyChanged
         try {
             var origImage = ImageUtility.BitmapToImageSource(image.ToBitmap());
             // var resultingRoadEdgeImage = _roadEdgeImageProcessing.processImageAsBitmap(image);
-            var resultingRoadEdgeImage = _obstacleImageProcessing.processImageAsBitmap(image);
+            var resultingRoadEdgeImage = _roadEdgeImageProcessing.processImageAsBitmap(image);
 
             origImage.Freeze();
             resultingRoadEdgeImage.Freeze();

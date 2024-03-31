@@ -22,7 +22,8 @@ public class SurroundingMap
     private const float worldSpaceStartY = 0;
     private const float worldSpaceEndY = 10;
     private readonly float maximumDegree = (float) Math.PI / 36f;
-
+    private readonly float contourPointCircleRadius = 1f;
+    private readonly float contourPointCircleRadiusMinimumIntersectionDistance = 0;
 
     private static IContourPointTransformationDecorator _transformation = new TranslationToCartesiusDecorator(
         new CubicSplineInterpScalingDecorator());
@@ -58,10 +59,16 @@ public class SurroundingMap
 
         var result = new List<ContourPoint>();
         offroad = false;
-
+        var closestVertically = getVerticallyClosestPointOnLeftAndOnRight();
+        var closestX = Math.Min(Math.Abs(closestVertically.Item1?.X ?? Double.PositiveInfinity),
+            Math.Abs(closestVertically.Item2?.X ?? Double.PositiveInfinity));
 
         foreach (var rayCastTarget in rayCastLines) {
             var raycastResult = roadEdgeList.getIntersectionPoints(origin, rayCastTarget, extensionLength);
+
+            if (closestX > contourPointCircleRadius)
+                raycastResult.AddRange(roadEdgeList.getClosestIntersectionPointsTowardCircle(origin,
+                rayCastTarget, contourPointCircleRadius, contourPointCircleRadiusMinimumIntersectionDistance));
             ifOneRayIntersectsTwoPointFartherThanThresholdMeansWeReOffRoad(raycastResult);
             var shortestCollisionPoint = selectClosestPoint(origin, raycastResult);
             if (shortestCollisionPoint != null)
@@ -71,8 +78,8 @@ public class SurroundingMap
         }
         intersectionPoints = new ContourList(result, -1, -1);
         recommendedAngles = calculateRecommendedIntersectionPoints();
-        if (offroad)
-            handleOffRoadByModifyingRecommendedAngles();
+        // if (offroad)
+            // handleOffRoadByModifyingRecommendedAngles();
     }
 
     private bool offroad = false;
@@ -330,7 +337,7 @@ public class SurroundingMap
 
 
 
-    private ContourDrawer roadEdgeContourPointDrawer = new (3, new MCvScalar(255, 255, 255), LineType.Filled);
+    private ContourDrawer roadEdgeContourPointDrawer = new (1, new MCvScalar(255, 255, 255), LineType.Filled);
     private ContourDrawer roadEdgeContourPointDirectionDrawer = new (1, new MCvScalar(150, 255, 150), LineType.FourConnected);
     private ContourDrawer intersectionContourPointDrawer = new (2, new MCvScalar(255, 150, 150), LineType.Filled);
     public void drawOnMat(Mat mat) {
@@ -341,6 +348,8 @@ public class SurroundingMap
         var transformedRoadEdgeList = roadEdgeList.applyTransformation(transformerToDrawOnMat);
 
         roadEdgeContourPointDrawer.drawContourPoints(transformedRoadEdgeList, mat, 1);
+        roadEdgeContourPointDrawer.drawContourPoints(transformedRoadEdgeList, mat,
+            (int)(mat.Height*contourPointCircleRadius/(worldSpaceEndY-worldSpaceStartY)/2));
         roadEdgeContourPointDirectionDrawer.drawContourLinks(transformedRoadEdgeList, mat, 0.1);
         if (intersectionPoints == null)
             return;
@@ -464,3 +473,4 @@ public static class ListCopyExtension
     }
 
 }
+
