@@ -58,16 +58,16 @@ public class InterprocessCommunicationRpc<E> where E: System.Enum
         requestQueue.Add(key, o => {
             var returnTypeIsNullable = (Nullable.GetUnderlyingType(typeof(R)) != null);
             if (typeof(R) == typeof(NoReturn)) {
-                completionSource.SetResult(default(R));
+                completionSource.TrySetResult(default(R));
             }
             if (o == null || Equals(o, default(R)) ) {
-                completionSource.SetResult(default(R));
+                completionSource.TrySetResult(default(R));
                 return;
             }
             try {
                 var jtoken = JToken.FromObject(o);
                 var retVal = jtoken.ToObject<R>();
-                completionSource.SetResult(retVal);
+                completionSource.TrySetResult(retVal);
                 requestQueue.Remove(key);
             }
             catch (InvalidCastException e) {

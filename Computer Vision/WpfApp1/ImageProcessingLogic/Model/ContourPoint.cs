@@ -143,4 +143,14 @@ public class ContourPoint
         }
         return currA == currB;
     }
+
+    public List<ContourPoint> getThisAndAllNextLinks() {
+        var ret = new List<ContourPoint>();
+        var curr = this;
+        while (curr != null) {
+            ret.Add(curr);
+            curr = curr.link;
+        }
+        return ret;
+    }
 }
