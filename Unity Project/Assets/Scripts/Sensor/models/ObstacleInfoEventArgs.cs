@@ -5,7 +5,8 @@ namespace Sensor.models
 {
     public class ObstacleInfoEventArgs: EventArgs
     {
-        [CanBeNull] public readonly UltrasonicSensorIntegration sensorIntegration;
+        [CanBeNull] public readonly UltrasonicSensorIntegration sensor;
+        public int obstacleId;
         public readonly bool allowedToGoLeft;
         public readonly bool allowedToGoForward;
         public readonly bool allowedToGoRight;
@@ -14,10 +15,11 @@ namespace Sensor.models
         public float? forwardObstacleDistance;
 
         public ObstacleInfoEventArgs(
-            [CanBeNull] UltrasonicSensorIntegration sensorIntegration, float? forwardObstacleDistance, float? ForwardObstacleETA,
+            [CanBeNull] UltrasonicSensorIntegration sensor, int obstacleId, float? forwardObstacleDistance, float? ForwardObstacleETA,
             bool allowedToGoLeft, bool allowedToGoForward, bool allowedToGoRight, bool shouldGoBackward
         ) {
-            this.sensorIntegration = sensorIntegration;
+            this.sensor = sensor;
+            this.obstacleId = obstacleId;
             this.forwardObstacleDistance = forwardObstacleDistance;
             this.forwardObstacleETA = ForwardObstacleETA;
             this.allowedToGoLeft = allowedToGoLeft;
@@ -26,8 +28,8 @@ namespace Sensor.models
             this.shouldGoBackward = shouldGoBackward;
         }
 
-        public static ObstacleInfoEventArgs NoObstacle([CanBeNull] UltrasonicSensorIntegration sensor) {
-            return new ObstacleInfoEventArgs(sensor,
+        public static ObstacleInfoEventArgs NoObstacle([CanBeNull] UltrasonicSensorIntegration sensor, int obstacleId) {
+            return new ObstacleInfoEventArgs(sensor, obstacleId,
                 null, null,
                 true, true, true, false);
         }

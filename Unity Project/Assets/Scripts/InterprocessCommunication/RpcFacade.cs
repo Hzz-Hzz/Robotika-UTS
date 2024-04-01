@@ -53,6 +53,10 @@ public class RpcFacade
         return interprocessCommunication.call<bool>(
             QueryCommandsEnum.IS_OFF_ROAD);
     }
+    public Task<Tuple<Vector2?[,], Vector2?[,]>> getRoadEdgeVectors() {
+        return interprocessCommunication.call<Tuple<Vector2?[,], Vector2?[,]>>(
+            QueryCommandsEnum.GET_ROAD_EDGE_LIST);
+    }
 
     public readonly Func<bool> isConnected;
 

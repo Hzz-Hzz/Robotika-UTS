@@ -23,15 +23,17 @@ namespace Sensor
         public Rigidbody rigidBodyForSpeedSensor;
         private SpeedSensor _speedSensor;
 
-        private float?[] leftSensorResults = new float?[]{null, null, null};
-        private float? midSensorResult = null;
-        private float?[] rightSensorResults = new float?[]{null, null, null};
+        public float?[] leftSensorResults = new float?[]{null, null, null};
+        public float? midSensorResult = null;
+        public float?[] rightSensorResults = new float?[]{null, null, null};
 
         private void Start() {
-            ObstacleInfoUpdated?.Invoke(ObstacleInfoEventArgs.NoObstacle(this));
+            ObstacleInfoUpdated?.Invoke(ObstacleInfoEventArgs.NoObstacle(this, -1));
             _speedSensor = new SpeedSensor(rigidBodyForSpeedSensor);
         }
 
+        private int obstacleId = 0;
+        private float? prevObstacleDistance = null;
         private void Update() {
             updateSensorResults();
             float? forwardObstacleDistance = null;
@@ -46,6 +48,10 @@ namespace Sensor
                 forwardObstacleDistance = this.forwardClosestDistance;
                 forwardObstacleETA = forwardObstacleDistance / _speedSensor.getCurrentSpeed();
             }
+            if (forwardObstacleDistance == null && prevObstacleDistance != null
+                || prevObstacleDistance != null && forwardObstacleDistance > prevObstacleDistance + 1)
+                obstacleId++;
+            prevObstacleDistance = forwardObstacleDistance;
             if (leftCollisions != 0)
                 allowedLeft = false;
             if (rightCollisions != 0)
@@ -69,7 +75,7 @@ namespace Sensor
             if (forwardObstacleDistance < 0.8 || forwardObstacleETA < 0.3) {  // go bakcward
                 shouldGoBackward = true;
             }
-            ObstacleInfoUpdated?.Invoke(new ObstacleInfoEventArgs(this, forwardObstacleDistance,
+            ObstacleInfoUpdated?.Invoke(new ObstacleInfoEventArgs(this, obstacleId, forwardObstacleDistance,
                 forwardObstacleETA, allowedLeft, allowedForward, allowedRight, shouldGoBackward));
         }
 

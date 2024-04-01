@@ -49,11 +49,14 @@ namespace InterprocessCommunication
                 currentImageVersion = imageVersion;
 
                 var angleRecommendationTask = _rpcFacade.getAngleRecommendation(imageData);
+                yield return angleRecommendationTask.toCoroutine();
+
                 var closestRoadEdgeInformationTask = _rpcFacade.getClosestSurrounding();
                 var verticallyClosestRoadEdgeInformationTask = _rpcFacade.getVerticallyClosestSurrounding();
                 var isOffRoadTask = _rpcFacade.isOffRoad();
+                var roadEdgeVectorsTask = _rpcFacade.getRoadEdgeVectors();
                 yield return Task.WhenAll(angleRecommendationTask, closestRoadEdgeInformationTask,
-                    verticallyClosestRoadEdgeInformationTask, isOffRoadTask).toCoroutine();
+                    verticallyClosestRoadEdgeInformationTask, isOffRoadTask, roadEdgeVectorsTask).toCoroutine();
 
                 var angleRecommendation = angleRecommendationTask.Result;
                 if (angleRecommendation == null)
@@ -67,6 +70,7 @@ namespace InterprocessCommunication
                     horizontallyClosestRoadLeftRightEdge = closestRoadEdgeInformationTask.Result,
                     verticallyClosestRoadLeftRightEdge = verticallyClosestRoadEdgeInformationTask.Result,
                     isOffRoad = isOffRoadTask.Result,
+                    roadEdgeList = roadEdgeVectorsTask.Result,
                 });
             }
         }

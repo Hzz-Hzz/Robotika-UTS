@@ -104,9 +104,9 @@ namespace Actuators
 
         public float getRecommendedAlpha1ToAvoidObstacle() {
             var recommendedRaToMakeRv1EqualsRo =
-                -(square(P1 + P2) - square(P1 + P2 + d) + square(L) - square(Lo) / (2 * Lo + 2 * L));
+                -(square(P1 + P2) - square(P1 + P2 + d) + square(L) - square(Lo)) / (2 * Lo + 2 * L);
             var recommendedRaToMakeRv2EqualsRo =
-                -(square(square(P3) + square(L) - square(Lo) - square(P1+P2+d)) / (2*(Lo-L)));
+                -((square(P3) + square(L) - square(Lo) - square(P1+P2+d)) / (2*(Lo-L)));
             var theta1a = Math.Abs(Math.Atan(recommendedRaToMakeRv1EqualsRo / P2));
             var alpha1a = 90 - toDeg(theta1a);
             var theta1b = Math.Abs(Math.Atan(recommendedRaToMakeRv2EqualsRo / P2));

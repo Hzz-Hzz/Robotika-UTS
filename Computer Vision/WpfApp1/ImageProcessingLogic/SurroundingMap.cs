@@ -17,10 +17,10 @@ public class SurroundingMap
 {
     private ContourList roadEdgeList;
 
-    private const float worldSpaceStartX = -20;
-    private const float worldSpaceEndX = 20;
+    private const float worldSpaceStartX = -60;
+    private const float worldSpaceEndX = 60;
     private const float worldSpaceStartY = 0;
-    private const float worldSpaceEndY = 10;
+    private const float worldSpaceEndY = 30;
     private readonly float maximumDegree = (float) Math.PI / 36f;
     private readonly float contourPointCircleRadius = 0f;
     private readonly float contourPointCircleRadiusMinimumIntersectionDistance = 0;
@@ -390,6 +390,53 @@ public class SurroundingMap
         }
     }
 
+    /**
+     * Return 2D array of vectors. Second-axis of the index indicate the position (index 0) and the direction (index 1)
+     */
+    public Tuple<Vector2?[,], Vector2?[,]> getListOfRoadEdgeAsVectors() {
+        var leftRight = getLeftAndRightRootContourPointsByClockwiseDirection();
+        var left = leftRight.Item1.SelectMany(i=>i.getThisAndAllNextLinks()).ToList();
+        var right = leftRight.Item2.SelectMany(i=>i.getThisAndAllNextLinks()).ToList();
+        return new Tuple<Vector2?[,], Vector2?[,]>(contourPointsToTwoDVector(left), contourPointsToTwoDVector(right));
+    }
+
+    private Vector2?[,] contourPointsToTwoDVector(List<ContourPoint> contourPoints) {
+        var ret = new Vector2?[contourPoints.Count, 2];
+        for (int i = 0; i < contourPoints.Count; i++) {
+            var contourPoint = contourPoints[i];
+            var position = contourPoint.vector2;
+            var direction = (contourPoint.link==null)? null : contourPoint.link?.vector2 - position;
+            ret[i, 0] = position;
+            ret[i, 1] = direction;
+        }
+        return ret;
+    }
+
+
+    public ContourPoint[] rootContourPoints {
+        get {
+            return roadEdgeList.contours.Where(e => e.backwardLink == null).ToArray();
+        }
+    }
+    public Tuple<List<ContourPoint>, List<ContourPoint>> getLeftAndRightRootContourPointsByClockwiseDirection() {
+        var roots = rootContourPoints;
+        var left = new List<ContourPoint>();
+        var right = new List<ContourPoint>();
+
+        foreach (var contourPoint in roots) {
+            if (contourPoint.link == null) {
+                if (contourPoint.X < 0)
+                    left.Add(contourPoint);
+                else if (contourPoint.X > 0)
+                    right.Add(contourPoint);
+                continue;
+            }
+            if (RayCastingUtility.isCounterClockwise(contourPoint.vector2, contourPoint.link.vector2, origin))
+                right.Add(contourPoint);
+            else left.Add(contourPoint);
+        }
+        return new Tuple<List<ContourPoint>, List<ContourPoint>>(left, right);
+    }
 
     private SurroundingMap(ContourList roadEdgeList) {
         this.roadEdgeList = roadEdgeList;
