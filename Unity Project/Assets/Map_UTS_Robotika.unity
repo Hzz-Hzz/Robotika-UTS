@@ -20826,7 +20826,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  maximumFPS: 15
+  maximumFPS: 10
   keepRunningWhenEditorIsPaused: 1
   hideFromMainCamera: 1
 --- !u!81 &1399673873

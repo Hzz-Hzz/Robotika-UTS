@@ -38,6 +38,9 @@ namespace InterprocessCommunication
             this.imageData = imageData.imageData;
         }
 
+        public Dictionary<int, Direction> obstacleIdVerdicts = new();
+        public Dictionary<int, Tuple<float, float, AngleRecommendationReceivedEventArgs>> debugPurposeOnly = new();
+
         IEnumerator sendImageDataToServerAndGetFeedback() {
             var currentImageVersion = -1L;
 
@@ -71,6 +74,8 @@ namespace InterprocessCommunication
                     verticallyClosestRoadLeftRightEdge = verticallyClosestRoadEdgeInformationTask.Result,
                     isOffRoad = isOffRoadTask.Result,
                     roadEdgeList = roadEdgeVectorsTask.Result,
+                    obstacleIdVerdicts = obstacleIdVerdicts,
+                    debugPurposeOnly = debugPurposeOnly,
                 });
             }
         }

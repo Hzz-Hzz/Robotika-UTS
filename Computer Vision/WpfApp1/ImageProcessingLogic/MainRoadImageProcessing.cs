@@ -76,7 +76,7 @@ public class MainRoadImageProcessing
         using (var solidGrey = GpuCpuMat.fromSolidColor(ret, new MCvScalar(b, g, r)))
         using (var solidWhite = GpuCpuMat.fromSolidColor(ret, new MCvScalar(255, 255, 255))) {
             AnyInvoke.Absdiff(ret, solidGrey, ret);
-            AnyInvoke.Absdiff(ret, solidWhite, ret);
+            AnyInvoke.Absdiff(ret, solidWhite, ret);  // inverse
             removeRedObjects(gpuMat, 235, 10);
 
             AnyInvoke.CvtColor(ret, ret, ColorConversion.Bgr2Gray);

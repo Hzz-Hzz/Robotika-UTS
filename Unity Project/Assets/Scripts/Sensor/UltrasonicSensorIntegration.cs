@@ -38,6 +38,7 @@ namespace Sensor
             updateSensorResults();
             float? forwardObstacleDistance = null;
             float? forwardObstacleETA = null;
+            ForwardSensorEnum? whichForwardSensorEnum = null;
             var shouldGoBackward = false;
             var allowedLeft = true;
             var allowedForward = true;
@@ -45,11 +46,14 @@ namespace Sensor
 
             if (forwardClosestDistance != null) {
                 allowedForward = false;
+                whichForwardSensorEnum = whichForwardSensor;
                 forwardObstacleDistance = this.forwardClosestDistance;
                 forwardObstacleETA = forwardObstacleDistance / _speedSensor.getCurrentSpeed();
             }
             if (forwardObstacleDistance == null && prevObstacleDistance != null
-                || prevObstacleDistance != null && forwardObstacleDistance > prevObstacleDistance + 1)
+                || prevObstacleDistance != null && forwardObstacleDistance > prevObstacleDistance + 1
+                // -2 because normally we're getting closer to the obstacle, so need extra threshold
+                || prevObstacleDistance != null && forwardObstacleDistance < prevObstacleDistance - 2)
                 obstacleId++;
             prevObstacleDistance = forwardObstacleDistance;
             if (leftCollisions != 0)
@@ -76,7 +80,7 @@ namespace Sensor
                 shouldGoBackward = true;
             }
             ObstacleInfoUpdated?.Invoke(new ObstacleInfoEventArgs(this, obstacleId, forwardObstacleDistance,
-                forwardObstacleETA, allowedLeft, allowedForward, allowedRight, shouldGoBackward));
+                forwardObstacleETA, whichForwardSensorEnum, allowedLeft, allowedForward, allowedRight, shouldGoBackward));
         }
 
         private void updateSensorResults() {
@@ -123,6 +127,21 @@ namespace Sensor
                 if (result == Single.PositiveInfinity)
                     return null;
                 return result;
+            }
+        }
+
+        public ForwardSensorEnum? whichForwardSensor {
+            get {
+                var forwardClosestDistance = this.forwardClosestDistance;
+                if (forwardClosestDistance == null)
+                    return null;
+                if (leftSensorResults[0] == forwardClosestDistance)
+                    return ForwardSensorEnum.LEFT_FORWARD;
+                if (rightSensorResults[0] == forwardClosestDistance)
+                    return ForwardSensorEnum.RIGHT_FORWARD;
+                if (midSensorResult == forwardClosestDistance)
+                    return ForwardSensorEnum.MID_FORWARD;
+                return null;
             }
         }
     }

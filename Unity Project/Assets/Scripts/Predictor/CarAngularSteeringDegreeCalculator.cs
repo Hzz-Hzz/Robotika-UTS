@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 namespace Actuators
 {
@@ -45,15 +46,17 @@ namespace Actuators
         // They represents right wheel IIF turning right (positive degree).
         public void updateSteeringDirection(float alpha1Degree) {
             angleSign = Math.Sign(alpha1Degree);
-            alpha1Degree = Math.Abs(alpha1Degree);
-
-            if (alpha1Degree < minimumAlpha1ToBeAssumedNotStraightAngle) {  // prevent division by zero
-                Theta1 = 90;
-                return;
-            }
-            Theta1 = toRad(90 - alpha1Degree);
+            Theta1 = calculateTheta1FromAlpha1(alpha1Degree);
             inputUpdated = true;
         }
+        public double calculateTheta1FromAlpha1(double alpha1Degree) {
+            alpha1Degree = Math.Abs(alpha1Degree);
+            if (alpha1Degree < minimumAlpha1ToBeAssumedNotStraightAngle) {  // prevent division by zero
+                return 90;
+            }
+            return toRad(90 - alpha1Degree);
+        }
+
         public void updateObstacleDistance(double obstacleDistance) {  // rads
             d = obstacleDistance;
             inputUpdated = true;
@@ -80,22 +83,51 @@ namespace Actuators
             updateAll();
             return 90 - toDeg(Theta2);
         }
-        public bool willHitObstacle() {
-            if (Math.Abs(Theta1 - 90) < 0.001 && !Double.IsPositiveInfinity(d))
+        public bool willHitObstacle(double? Alpha1, double? obstacleDistance) {
+            var obsDistance = this.d;
+            var theta1 = this.Theta1;
+            if (Alpha1 != null)
+                theta1 = calculateTheta1FromAlpha1(Alpha1.Value);
+            if (obstacleDistance != null)
+                obsDistance = obstacleDistance.Value;
+
+            if (Math.Abs(theta1 - 90) < 0.001 && !Double.IsPositiveInfinity(obsDistance))  // if going straight, prevent potential zero division error
                 return true;
-            updateAll();
-            return (Ro < Rv1) || (Ro < Rv2);
+            var ra = calculateRaFromTheta1(theta1);
+            var ro = calculateRo(ra);
+            var rv1 = calculateRv1(ra);
+            var rv2 = calculateRv2(ra);
+            return (ro < rv1) || (ro < rv2);
         }
 
         private void updateAll() {
             if (!inputUpdated)
                 return;
-            Ra = P2 * Math.Tan(Theta1);
-            Theta2 = Math.Atan((Ra + L)/P2);
-            Ro = Math.Sqrt(square(Ra - Lo) + square(P1+P2+d));
-            Rv1 = Math.Sqrt(square(Ra + L) + square(P1+P2));
-            Rv2 = Math.Sqrt(square(Ra + L) + square(P3));
+            Ra = calculateRaFromTheta1(Theta1);
+            Theta2 = calculateTheta2(Ra);
+            Ro = calculateRo(Ra);
+            Rv1 = calculateRv1(Ra);
+            Rv2 = calculateRv2(Ra);
             inputUpdated = false;
+        }
+
+
+        private double calculateRaFromTheta1(double Theta1) {
+            return P2 * Math.Tan(Theta1);
+        }
+
+        private double calculateTheta2(double Ra) {
+            return Math.Atan((Ra + L) / P2);
+        }
+
+        private double calculateRo(double Ra) {
+            return Math.Sqrt(square(Ra - Lo) + square(P1 + P2 + d));
+        }
+        private double calculateRv1(double Ra) {
+            return Math.Sqrt(square(Ra + L) + square(P1 + P2));
+        }
+        private double calculateRv2(double Ra) {
+            return Math.Sqrt(square(Ra + L) + square(P3));
         }
 
         private double square(double x) {
@@ -106,11 +138,12 @@ namespace Actuators
             var recommendedRaToMakeRv1EqualsRo =
                 -(square(P1 + P2) - square(P1 + P2 + d) + square(L) - square(Lo)) / (2 * Lo + 2 * L);
             var recommendedRaToMakeRv2EqualsRo =
-                -((square(P3) + square(L) - square(Lo) - square(P1+P2+d)) / (2*(Lo-L)));
-            var theta1a = Math.Abs(Math.Atan(recommendedRaToMakeRv1EqualsRo / P2));
+                -(square(P3) + square(L) - square(Lo) - square(P1+P2+d)) / (2*Lo+2*L);
+            var theta1a = Math.Atan(recommendedRaToMakeRv1EqualsRo / P2);
             var alpha1a = 90 - toDeg(theta1a);
-            var theta1b = Math.Abs(Math.Atan(recommendedRaToMakeRv2EqualsRo / P2));
+            var theta1b = Math.Atan(recommendedRaToMakeRv2EqualsRo / P2);
             var alpha1b = 90 - toDeg(theta1b);
+            Debug.Assert(theta1a >= 0 || theta1b >= 0);
             return (float) Math.Max(alpha1a, alpha1b);
         }
 
