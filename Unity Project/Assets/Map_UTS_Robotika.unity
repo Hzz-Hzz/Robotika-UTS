@@ -4902,7 +4902,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1857dae6c787f15448ff77a07d6ff4c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sensorLength: 10
+  sensorLength: 15
 --- !u!1001 &578153247
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -17450,8 +17450,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ca914eb7b16465594218eab44ebdc0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rotationSpeed: 40
-  maximumMoveForwardSpeed: 10
 --- !u!1001 &2013686442
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -18432,6 +18430,7 @@ GameObject:
   - component: {fileID: 2040999997}
   - component: {fileID: 2040999996}
   - component: {fileID: 2040999995}
+  - component: {fileID: 2040999998}
   m_Layer: 0
   m_Name: EventSystem
   m_TagString: Untagged
@@ -18471,7 +18470,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_FirstSelected: {fileID: 0}
+  m_FirstSelected: {fileID: 1042589100}
   m_sendNavigationEvents: 1
   m_DragThreshold: 10
 --- !u!4 &2040999997
@@ -18489,6 +18488,18 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2040999998
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2040999994}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2aa854b2a27c4f6a94a91152be45f15b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2053938220
 GameObject:
   m_ObjectHideFlags: 0
@@ -19070,7 +19081,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 919132148351641323}
   serializedVersion: 2
-  m_Mass: 200
+  m_Mass: 100
   m_Drag: 0
   m_AngularDrag: 0.05
   m_UseGravity: 1

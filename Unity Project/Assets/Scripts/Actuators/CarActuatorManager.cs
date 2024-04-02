@@ -96,23 +96,17 @@ namespace Actuators
         }
 
         private Direction getDirectionThatWillPutTheCarInMiddleOfRoad() {
-            if (_angleRecommendationReceivedEventArgs == null)
-                return Direction.DEFAULT;
+
             if (_angleRecommendationReceivedEventArgs.isOffRoad)
                 return Direction.DEFAULT;
             if (freeFallEventArgs.numOfFreeFall > 0)
                 return Direction.DEFAULT;
 
-            var verticallyClosest = _angleRecommendationReceivedEventArgs.verticallyClosestRoadLeftRightEdge;
-            if (verticallyClosest.Item1 == null || verticallyClosest.Item2 == null)
-                return Direction.DEFAULT;
-            var leftX = Math.Abs(verticallyClosest.Item1.Value.x);
-            var rightX = Math.Abs(verticallyClosest.Item2.Value.x);
-            var total = leftX + rightX;
-            var ratioLeft = leftX / total;
+            var ratio = getLeftRightRatio();
+            var ratioLeft = ratio.Item3;
             var tooCloseToLeftSide = ratioLeft < 0.5;
             var tooCloseToRightSide = ratioLeft > 0.5;
-            CustomLogger.Log($"too extreme slope, going middle. ({leftX},{rightX})");
+            CustomLogger.Log($"too extreme slope, going middle. ({ratio.Item1},{ratio.Item2})");
 
             if (!tooCloseToLeftSide && !tooCloseToRightSide) {
                 return Direction.DEFAULT;
@@ -123,14 +117,29 @@ namespace Actuators
             return Direction.LEFT;
         }
 
+        [CanBeNull]
+        private Tuple<float,float,float> getLeftRightRatio() {
+            if (_angleRecommendationReceivedEventArgs == null)
+                return null;
+            var verticallyClosest = _angleRecommendationReceivedEventArgs.verticallyClosestRoadLeftRightEdge;
+            if (verticallyClosest.Item1 == null || verticallyClosest.Item2 == null)
+                return null;
+            var leftX = Math.Abs(verticallyClosest.Item1.Value.x);
+            var rightX = Math.Abs(verticallyClosest.Item2.Value.x);
+            var total = leftX + rightX;
+            var ratioLeft = leftX / total;
+            return new Tuple<float, float, float>(leftX, rightX, ratioLeft);
+        }
+
         private float getAngleThatWillPutTheCarInMiddleOfRoad(float angle) {
             var dir = getDirectionThatWillPutTheCarInMiddleOfRoad();
             CustomLogger.Log($"Going to middle is modifying the direction to {dir.ToString()}");
             if (dir == Direction.DEFAULT)
                 return 0;
+            var ratio = getLeftRightRatio();
             if (dir == Direction.RIGHT)
-                return 4;
-            return -4;
+                return 2 * (float)Math.Tan(1 / ratio.Item3);
+            return -2  * (float)Math.Tan(ratio.Item3);
         }
 
         private void brakeIfFreeFalling() {
@@ -180,13 +189,18 @@ namespace Actuators
 
 
             if (_additionalUltrasonic.rearLeftObstacleDetected && angle < 0) {
+                var obstDist = _additionalUltrasonic.rearLeft.detectDistance();
                 var fromAngle = angle;
-                angle = 3;
-                CustomLogger.Log($"Rear-left obstacle detected. Modifying angle from {fromAngle} to {angle}");
+                angle = additionalDegreeToMakeSure + _angularDegreeSteeringCalculator.getRecommendedAlpha1ToAvoidObstacle(
+                    obstDist, onImpossibleDefaultValue: 45);
+                CustomLogger.Log($"Rear-left obstacle detected at {obstDist}. Modifying angle from {fromAngle} to {angle}");
             }else if (_additionalUltrasonic.rearRightObstacleDetected && angle > 0) {
+                var obstDist = _additionalUltrasonic.rearRight.detectDistance();
                 var fromAngle = angle;
-                angle = -3;
-                CustomLogger.Log($"Rear-right obstacle detected. Modifying angle from {fromAngle} to {angle}");
+                angle = additionalDegreeToMakeSure + _angularDegreeSteeringCalculator.getRecommendedAlpha1ToAvoidObstacle(
+                    obstDist, onImpossibleDefaultValue: 45);
+                angle = -angle;
+                CustomLogger.Log($"Rear-right obstacle detected at {obstDist}. Modifying angle from {fromAngle} to {angle}");
             }
 
             if (_additionalUltrasonic.frontObstacleDetected
@@ -194,7 +208,7 @@ namespace Actuators
             ) {
                 CustomLogger.Log($"Front-obstacle detected and will be hit");
                 var sign = Math.Sign(targetCarAngleBasedOnRecommendationAndCamRotation);
-                sign = (sign == 0) ? -1 : 1;
+                sign = (sign == 0) ? -1 : sign;
                 var frontObstacle = _additionalUltrasonic.frontObstacleDistance;
                 var calculatedAngle = _angularDegreeSteeringCalculator.getRecommendedAlpha1ToAvoidObstacle(
                     frontObstacle, onImpossibleDefaultValue: Single.NaN);
@@ -210,10 +224,10 @@ namespace Actuators
                 var turnDegree = 45;
                 // var turnDegree = Math.Min(45f / frontObstacleDistance!.Value, 45f);
 
-                CustomLogger.Log($"Impossible to achieve the angle. Will go to the other side {turnDegree}");
-                if (left < right)
-                    return turnDegree;
-                return -turnDegree;
+                if (left > right)
+                    turnDegree = -turnDegree;
+                CustomLogger.Log($"Impossible to achieve the angle. Will go to the other side {turnDegree}. Obst: {left},{right}");
+                return turnDegree;
             }
 
             return angle;
@@ -262,16 +276,20 @@ namespace Actuators
                 && _additionalUltrasonic.frontObstacleDistance < 1
                 && _speedSensor.getCurrentSpeed() < 0.5
             ) {  // already hit the object and cannot move
+                CustomLogger.Log("obstacle was hit. Moving torque backward...");
                 goBackwardUntilTimestamp = Time.time + 2;
                 doNotUseRoadRecommendation = Time.time + 6;
             }
             if (goBackwardUntilTimestamp != null && Time.time < goBackwardUntilTimestamp) {
+                CustomLogger.Log("Going backward timer is still active... Moving backward...");
                 motorTorque = -backwardTorque;
                 if (_speedSensor.isGoingForward(transform)) {
+                    CustomLogger.Log("Still moving forward... Keep setting the torque backward...");
                     goBackwardUntilTimestamp = Time.time + 1;  // refresh
                     doNotUseRoadRecommendation = Time.time + 6;
                 }
                 if (_angularDegreeSteeringCalculator.willHitObstacle(40, _additionalUltrasonic.frontObstacleDistance)) {
+                    CustomLogger.Log("Will hit obstacle, keep setting torque backward...");
                     goBackwardUntilTimestamp = Time.time + 1;  // refresh
                     doNotUseRoadRecommendation = Time.time + 6;
                 }
@@ -291,6 +309,7 @@ namespace Actuators
                 (goBackwardUntilTimestamp == null || goBackwardUntilTimestamp < Time.time);
             if (_speedSensor.getCurrentSpeed() < 0.5 && noActiveGoBackwardTimestamp)
                 goBackwardUntilTimestamp = Time.time + 2;
+            CustomLogger.Log("Obstacle hit detection from circular ultrasonic");
         }
 
         private FreeFallStateChangedEventArgs freeFallEventArgs;
@@ -325,7 +344,7 @@ namespace Actuators
 
         public float steerAngle {
             get {
-                return leftFront.steerAngle;
+                return Math.Max(leftFront.steerAngle, rightFront.steerAngle);
             }
             set {
                 Debug.DrawLine(transform.position,

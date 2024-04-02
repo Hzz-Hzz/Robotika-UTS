@@ -7,7 +7,7 @@ namespace DefaultNamespace
     public sealed class CustomLogger
     {
         public const bool enabled = true;
-        public const int flushInterval = 10;
+        public const int flushInterval = 1;
 
 
         private static StringBuilder logs = new StringBuilder(2000);
