@@ -20,6 +20,10 @@ public class SendCarView : MonoBehaviour
 {
     public ImageUpdatedEvent ImageUpdated;
 
+    // DO NOT CHANGE THIS, IT's tied to the cubic spline mapping
+    private const int width = 891;
+    private const int height = 501;
+
     public int maximumFPS = 20;
     public bool keepRunningWhenEditorIsPaused = true;
     public bool hideFromMainCamera = true;
@@ -76,7 +80,7 @@ public class SendCarView : MonoBehaviour
     public void publishEvent(bool paused) {
         try {
             targetCameraGameobject.enabled = true;
-            cameraTexture2D = CamCapture(cameraTexture2D);
+            cameraTexture2D = CamCapture(width, height, cameraTexture2D);
             if (hideFromMainCamera)
                 targetCameraGameobject.enabled = false;
 
@@ -95,10 +99,9 @@ public class SendCarView : MonoBehaviour
     /**
      *  reuseTexture2D: increase efficiency so that we're not destroy & re-creating multiple times
      */
-    Texture2D CamCapture([CanBeNull] Texture2D reuseTexture2D = null)
+    Texture2D CamCapture(int width, int height, [CanBeNull] Texture2D reuseTexture2D = null)
     {
-        var height = targetCameraGameobject.pixelHeight;
-        var width = targetCameraGameobject.pixelWidth;
+        // CustomLogger.Log($"wh: {width}x{height}");
         RenderTexture tempRT = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32)
         {
             antiAliasing = 4
