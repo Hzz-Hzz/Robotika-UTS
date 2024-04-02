@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Threading;
+using DefaultNamespace;
 using EventsEmitter.models;
 using JetBrains.Annotations;
 using Unity.VisualScripting;
@@ -112,7 +113,7 @@ public class SendCarView : MonoBehaviour
 
         Texture2D? image = reuseTexture2D;
         if (image == null || image.IsDestroyed()) {
-            Debug.Log("Creating new Texture2D");
+            CustomLogger.Log("Creating new Texture2D");
             image = new Texture2D(width, height, TextureFormat.ARGB32, false, true);
         }else {
             image.Reinitialize(width, height, TextureFormat.ARGB32, false);

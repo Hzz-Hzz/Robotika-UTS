@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using DefaultNamespace;
 using JetBrains.Annotations;
 using UnityEditor;
 using UnityEngine;
@@ -70,7 +71,7 @@ public class RpcFacade
         alreadyInitialized = true;
 
         var server = new InterprocessCommunicationClient("NuelValenRobotik");
-        server.onLog += (sender, msg) => Debug.Log(msg);
+        server.onLog += (sender, msg) => CustomLogger.Log(msg);
         server.onDisconnected += (sender, exception) => showConnectionError();
         server.applyDefaultLoggingEvent(receiveMessage: false);
 
@@ -89,9 +90,9 @@ public class RpcFacade
 
     public void startListening() {
         _stopwatch.Start();
-        Debug.Log("Call startListening()");
+        CustomLogger.Log("Call startListening()");
         interprocessCommunication.startListeningAsyncFireAndForgetButKeepException(
-            (e) => Debug.LogError((e?.ToString())));
+            (e) => CustomLogger.Log((e?.ToString())));
     }
 
     public void stopListening() {

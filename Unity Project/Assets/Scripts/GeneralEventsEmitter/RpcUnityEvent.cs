@@ -58,32 +58,27 @@ namespace InterprocessCommunication
                 var obstacles = circularUltrasonicSensor.getObstacles();
                 var angleRecommendationWithObstacleTask = _rpcFacade.getAngleRecommendation(imageData, obstacles);
                 yield return angleRecommendationWithObstacleTask.toCoroutine();
-                var angleRecommendationNoObstacleTask = _rpcFacade.getAngleRecommendation(imageData, new ());
-                yield return angleRecommendationNoObstacleTask.toCoroutine();
 
                 var closestRoadEdgeInformationTask = _rpcFacade.getClosestSurrounding();
                 var verticallyClosestRoadEdgeInformationTask = _rpcFacade.getVerticallyClosestSurrounding();
                 var isOffRoadTask = _rpcFacade.isOffRoad();
                 var roadEdgeVectorsTask = _rpcFacade.getRoadEdgeVectors();
-                yield return Task.WhenAll(angleRecommendationNoObstacleTask, closestRoadEdgeInformationTask,
+                yield return Task.WhenAll(angleRecommendationWithObstacleTask, closestRoadEdgeInformationTask,
                     verticallyClosestRoadEdgeInformationTask, isOffRoadTask, roadEdgeVectorsTask).toCoroutine();
 
-                var angleRecommendationNoObstacle = angleRecommendationNoObstacleTask.Result;
+                var angleRecommendationNoObstacle = angleRecommendationWithObstacleTask.Result;
                 if (angleRecommendationNoObstacle == null)
                     continue;
                 Func<AngleRecommendation,AngleRecommendation> toDegree = (e) => new Tuple<float, double, Vector2>(
                     e.Item1, 180 * e.Item2 / Math.PI, e.Item3);
-                angleRecommendationNoObstacle = angleRecommendationNoObstacle.Select(toDegree).ToList();
                 var angleRecommendationWithObstacle = angleRecommendationWithObstacleTask.Result.Select(toDegree).ToList();
 
                 // tryToDirectTheCarToMiddleOfRoad(angleRecommendation, closestRoadEdgeInformationTask.Result);
                 AngleRecommendationReceived?.Invoke(new AngleRecommendationReceivedEventArgs{
-                    recommendations = angleRecommendationNoObstacle,
                     recommendationsWithObstacle = angleRecommendationWithObstacle,
-                    horizontallyClosestRoadLeftRightEdge = closestRoadEdgeInformationTask.Result,
                     verticallyClosestRoadLeftRightEdge = verticallyClosestRoadEdgeInformationTask.Result,
                     isOffRoad = isOffRoadTask.Result,
-                    roadEdgeList = roadEdgeVectorsTask.Result,
+                    // roadEdgeList = roadEdgeVectorsTask.Result,
                     obstacleIdVerdicts = obstacleIdVerdicts,
                     debugPurposeOnly = debugPurposeOnly,
                 });

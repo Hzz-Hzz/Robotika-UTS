@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using DefaultNamespace;
 using UnityEngine;
 
 public class MoveCar : MonoBehaviour
@@ -14,7 +15,7 @@ public class MoveCar : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Debug.Log("Hello: " + gameObject.name);
+        CustomLogger.Log("Hello: " + gameObject.name);
         Transform[] pathTransforms = path.GetComponentsInChildren<Transform>();
         nodes = new List<Transform>();
 

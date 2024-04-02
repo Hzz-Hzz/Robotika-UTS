@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using DefaultNamespace;
 using EventsEmitter.models;
 using JetBrains.Annotations;
 using Sensor;
@@ -26,7 +27,7 @@ namespace Actuators
 
         private Quaternion originalCameraRotationRelativeToParent;
         public GameObject camera;
-        public SteerDirectionManager cameraRotationManager = new SteerDirectionManager(35, 15, 10);
+        public SteerDirectionManager cameraRotationManager = new SteerDirectionManager(35, 30, 4);
         private float targetCarAngleBasedOnRecommendationAndCamRotation =>
             cameraRotationManager.getSteerAngle()*0.4f + angleRecommendation;
         private float targetCameraAngleBasedOnRecommendationAndCamRotation =>
@@ -58,31 +59,40 @@ namespace Actuators
         private const float MEDIUM_SLOPE = 0.25f;
 
         private void Update() {
+            updateSteerAngle();
+            motorTorque = _torqueManager.getMotorTorque(targetCarAngleBasedOnRecommendationAndCamRotation);
+            brakeIfFreeFalling();
+
+            handleGoingBackwardBecauseWhenObstacleAlreadyHit();
+            updateCameraRotation();
+            CustomLogger.Log($"Recommended: (angle:{targetCarAngleBasedOnRecommendationAndCamRotation:00.00},l:{angleRecommendationCollisionLength:00.00}) " +
+                      $"actualAngle: {steerAngle:00.00} " +
+                      $"Speed: {_speedSensor.getCurrentSpeed():00.00}  ObsDist: {_obstacleInfoEventArgs.forwardObstacleDistance:00.00}");
+        }
+
+        private void updateSteerAngle() {
+            modifyMaxSpeedBasedOnSlope();
+            var angle = targetCarAngleBasedOnRecommendationAndCamRotation * 0.75f;
+            // angle = (Math.Abs(angle) < 4)? 0f : angle - 4;
+            if (gyroscope.getSlope() >= EXTREME_SLOPE)
+                angle = getAngleThatWillPutTheCarInMiddleOfRoad(angle);
+            angle = turnLeftOrRightIfObstacleWillBeHit(angle);
+            if (Math.Abs(angle) <= 45) {
+                steerAngle = angle;
+            }
+            else {
+                steerAngle = Math.Sign(angle) * 45;
+                CustomLogger.Log($"Angle was too extreme ({angle}). Capping it to +- 45...");
+            }
+        }
+
+        private void modifyMaxSpeedBasedOnSlope() {
             var slope = gyroscope.getSlope();
             if (slope >= EXTREME_SLOPE)
                 _torqueManager.maxSpeed = 8;
             else if (slope >= MEDIUM_SLOPE)
                 _torqueManager.maxSpeed = 8;
             else _torqueManager.maxSpeed = 10;
-
-             // unused for now
-            _speedSensor ??= new SpeedSensor(rigidBodyForSpeedSensor);
-
-            var angle = targetCarAngleBasedOnRecommendationAndCamRotation * 0.75f;
-            // angle = (Math.Abs(angle) < 4)? 0f : angle - 4;
-            if (slope >= EXTREME_SLOPE)
-                angle = getAngleThatWillPutTheCarInMiddleOfRoad(angle);
-            angle = turnLeftOrRightIfObstacleWillBeHit(angle);
-
-            steerAngle = (Math.Abs(angle)<=45)? angle : Math.Sign(angle)*45;
-            motorTorque = _torqueManager.getMotorTorque(targetCarAngleBasedOnRecommendationAndCamRotation);
-            brakeIfFreeFalling();
-
-            handleGoingBackwardBecauseWhenObstacleAlreadyHit();
-            updateCameraRotation();
-            Debug.Log($"Recommended: (angle:{targetCarAngleBasedOnRecommendationAndCamRotation:00.00},l:{angleRecommendationCollisionLength:00.00}) " +
-                      $"actualAngle: {steerAngle:00.00} " +
-                      $"Speed: {_speedSensor.getCurrentSpeed():00.00}  ObsDist: {_obstacleInfoEventArgs.forwardObstacleDistance:00.00}");
         }
 
         private Direction getDirectionThatWillPutTheCarInMiddleOfRoad() {
@@ -92,7 +102,7 @@ namespace Actuators
                 return Direction.DEFAULT;
             if (freeFallEventArgs.numOfFreeFall > 0)
                 return Direction.DEFAULT;
-            Debug.Log("too extreme slope, going middle");
+
             var verticallyClosest = _angleRecommendationReceivedEventArgs.verticallyClosestRoadLeftRightEdge;
             if (verticallyClosest.Item1 == null || verticallyClosest.Item2 == null)
                 return Direction.DEFAULT;
@@ -102,6 +112,8 @@ namespace Actuators
             var ratioLeft = leftX / total;
             var tooCloseToLeftSide = ratioLeft < 0.5;
             var tooCloseToRightSide = ratioLeft > 0.5;
+            CustomLogger.Log($"too extreme slope, going middle. ({leftX},{rightX})");
+
             if (!tooCloseToLeftSide && !tooCloseToRightSide) {
                 return Direction.DEFAULT;
             }
@@ -113,6 +125,7 @@ namespace Actuators
 
         private float getAngleThatWillPutTheCarInMiddleOfRoad(float angle) {
             var dir = getDirectionThatWillPutTheCarInMiddleOfRoad();
+            CustomLogger.Log($"Going to middle is modifying the direction to {dir.ToString()}");
             if (dir == Direction.DEFAULT)
                 return 0;
             if (dir == Direction.RIGHT)
@@ -126,7 +139,7 @@ namespace Actuators
                 rightBack.brakeTorque = 0;
                 return;
             }
-            Debug.Log("Free falling");
+            CustomLogger.Log("Free falling");
             leftBack.brakeTorque = motorTorque;
             rightBack.brakeTorque = motorTorque;
             motorTorque = 0;
@@ -151,93 +164,59 @@ namespace Actuators
 
 
         private float turnLeftOrRightIfObstacleWillBeHit(float angle) {
-            if (_angleRecommendationReceivedEventArgs == null)
+            if (_angleRecommendationReceivedEventArgs == null) {
+                CustomLogger.Log("_angleRecommendationReceivedEventArgs is null... Not modifying the angle");
                 return angle;
-            if (_angleRecommendationReceivedEventArgs.isOffRoad)  // top priority, the vehicle could fall down otherwise
+            }
+            // top priority, the vehicle could fall down otherwise.
+            if (_angleRecommendationReceivedEventArgs.isOffRoad) {
+                CustomLogger.Log("Off road... Not modifying the angle");
                 return angle;
+            }
 
             _angularDegreeSteeringCalculator.updateObstacleDistance(_obstacleInfoEventArgs.forwardObstacleDistance ?? Double.PositiveInfinity);
             var targetCarRotationIsExtreme = Math.Abs(targetCarAngleBasedOnRecommendationAndCamRotation) > 15
                                              && angleRecommendationCollisionLength >= 2;
 
 
-            if (_additionalUltrasonic.rearLeftObstacleDetected && angle < 0)
+            if (_additionalUltrasonic.rearLeftObstacleDetected && angle < 0) {
+                var fromAngle = angle;
                 angle = 3;
-            else if (_additionalUltrasonic.rearRightObstacleDetected && angle > 0)
+                CustomLogger.Log($"Rear-left obstacle detected. Modifying angle from {fromAngle} to {angle}");
+            }else if (_additionalUltrasonic.rearRightObstacleDetected && angle > 0) {
+                var fromAngle = angle;
                 angle = -3;
+                CustomLogger.Log($"Rear-right obstacle detected. Modifying angle from {fromAngle} to {angle}");
+            }
 
             if (_additionalUltrasonic.frontObstacleDetected
                 && _angularDegreeSteeringCalculator.willHitObstacle(targetCarAngleBasedOnRecommendationAndCamRotation, _additionalUltrasonic.frontObstacleDistance)
             ) {
-                angle = Math.Sign(targetCarAngleBasedOnRecommendationAndCamRotation) *
-                        (additionalDegreeToMakeSure + _angularDegreeSteeringCalculator.getRecommendedAlpha1ToAvoidObstacle(
-                            _additionalUltrasonic.frontObstacleDistance,
-                            onImpossibleDefaultValue: Single.NaN));
-                if (!Single.IsNaN(angle))
+                CustomLogger.Log($"Front-obstacle detected and will be hit");
+                var sign = Math.Sign(targetCarAngleBasedOnRecommendationAndCamRotation);
+                sign = (sign == 0) ? -1 : 1;
+                var frontObstacle = _additionalUltrasonic.frontObstacleDistance;
+                var calculatedAngle = _angularDegreeSteeringCalculator.getRecommendedAlpha1ToAvoidObstacle(
+                    frontObstacle, onImpossibleDefaultValue: Single.NaN);
+                angle = sign * (additionalDegreeToMakeSure + calculatedAngle);
+                if (!Single.IsNaN(angle)) {
+                    CustomLogger.Log($"Modifying angle to {angle}. targetCarAngleBasedOnRecommendationAndCamRotation={targetCarAngleBasedOnRecommendationAndCamRotation:00.00}," +
+                                     $"sign={sign}, calculatedAngle={calculatedAngle:00.00}, angle={angle:00.00}");
                     return angle;
+                }
 
-                // if impossible, go to other direction
                 var left = _additionalUltrasonic.frontLeft.detectDistance(Single.PositiveInfinity);
                 var right = _additionalUltrasonic.frontRight.detectDistance(Single.PositiveInfinity);
                 var turnDegree = 45;
                 // var turnDegree = Math.Min(45f / frontObstacleDistance!.Value, 45f);
+
+                CustomLogger.Log($"Impossible to achieve the angle. Will go to the other side {turnDegree}");
                 if (left < right)
                     return turnDegree;
                 return -turnDegree;
             }
 
             return angle;
-
-
-            // if (avoidingDirection != null && _obstacleInfoEventArgs.obstacleId == avoidingDirectionObjectId) {
-            //     var recommended = _angularDegreeSteeringCalculator.getRecommendedAlpha1ToAvoidObstacle();
-            //     if (_obstacleInfoEventArgs.forwardObstacleDistance == null)
-            //         avoidingDirection = null;
-            //     else return avoidingDirectionAngle;
-            // }
-            //
-            // Debug.Log(_angleRecommendationReceivedEventArgs.verticallyClosestRoadLeftRightEdge);
-            // if (_obstacleInfoEventArgs.allowedToGoForward) {
-            //     return angle;
-            // }
-            // Debug.Log(_obstacleInfoEventArgs.obstacleId);
-            //
-            // Debug.Assert(_obstacleInfoEventArgs.forwardObstacleDistance != null);
-            // var obstacleHitsMiddleSensor =
-            //     (_obstacleInfoEventArgs.allowedToGoLeft == _obstacleInfoEventArgs.allowedToGoRight);
-            //
-            // var direction = Direction.DEFAULT;
-            //  if (_angleRecommendationReceivedEventArgs != null) {
-            //      var obstacleRelativePos = new Vector2(0, _obstacleInfoEventArgs.forwardObstacleDistance.Value);
-            //      var sensor = _obstacleInfoEventArgs.sensor;
-            //      if (_obstacleInfoEventArgs.whichForwardSensorEnum == ForwardSensorEnum.MID_FORWARD) // obstacle hits the middle
-            //          obstacleRelativePos.x = 0;
-            //      else if (_obstacleInfoEventArgs.whichForwardSensorEnum == ForwardSensorEnum.LEFT_FORWARD)
-            //          obstacleRelativePos.x = -carLength/2;
-            //      else if (_obstacleInfoEventArgs.whichForwardSensorEnum == ForwardSensorEnum.RIGHT_FORWARD)
-            //          obstacleRelativePos.x = carLength/2;
-            //
-            //      var cameraAngle = cameraRotationManager.getSteerAngle();
-            //      // if (Math.Abs(cameraAngle) > 10)
-            //          direction = _angleRecommendationReceivedEventArgs.getDirectionRecommendationToAvoidObstacle(
-            //              _obstacleInfoEventArgs.obstacleId, cameraAngle, obstacleRelativePos);
-            //      // else direction = getDirectionThatWillPutTheCarInMiddleOfRoad();
-            //
-            //
-            //      var impossibleToTurnToAnyDirection = _angularDegreeSteeringCalculator.willHitObstacle(45-additionalDegreeToMakeSure,
-            //          _obstacleInfoEventArgs.forwardObstacleDistance);
-            //      if (impossibleToTurnToAnyDirection)
-            //          direction = Direction.DEFAULT;  // if not possible, fallback to default behaviour
-            //  }
-            // if (direction == Direction.DEFAULT)
-            //     angle = getAngleForObstacleAvoidingDefaultBehaviour(angle);
-            // else {
-            //     var sign = (direction == Direction.LEFT) ? -1 : 1;
-            //     angle = sign * (additionalDegreeToMakeSure
-            //                     + _angularDegreeSteeringCalculator.getRecommendedAlpha1ToAvoidObstacle());
-            // }
-            //
-            // return angle;
         }
 
         private Direction? avoidingDirection = null;
@@ -289,7 +268,11 @@ namespace Actuators
             if (goBackwardUntilTimestamp != null && Time.time < goBackwardUntilTimestamp) {
                 motorTorque = -backwardTorque;
                 if (_speedSensor.isGoingForward(transform)) {
-                    goBackwardUntilTimestamp = Time.time + 2;  // refresh
+                    goBackwardUntilTimestamp = Time.time + 1;  // refresh
+                    doNotUseRoadRecommendation = Time.time + 6;
+                }
+                if (_angularDegreeSteeringCalculator.willHitObstacle(40, _additionalUltrasonic.frontObstacleDistance)) {
+                    goBackwardUntilTimestamp = Time.time + 1;  // refresh
                     doNotUseRoadRecommendation = Time.time + 6;
                 }
             } else if (Time.time < goBackwardUntilTimestamp + 2) {
@@ -316,26 +299,17 @@ namespace Actuators
         }
 
         private float angleRecommendation = 0;
-        private float angleRecommendationIgnoreObstacle = 0;
         private float angleRecommendationCollisionLength = 0;
         private AngleRecommendationReceivedEventArgs _angleRecommendationReceivedEventArgs;
         public void OnReceiveAngleRecommendation(AngleRecommendationReceivedEventArgs e) {
-            if (e.recommendations.Count == 0) {
-                Debug.Log("Recommendation array is empty");
-                return;
-            }
-
-
-
             if (e.recommendationsWithObstacle.Count == 0) {
-                Debug.Log("recommendationsWithObstacle array is empty");
+                CustomLogger.Log("recommendationsWithObstacle array is empty");
                 return;
             }
             if (Math.Abs(e.recommendationsWithObstacle[0].Item2)>360) {
-                Debug.Log($"Angle recommendationsWithObstacle buggy: {e.recommendations[0].Item2}");
+                CustomLogger.Log($"Angle recommendationsWithObstacle buggy: {e.recommendationsWithObstacle[0].Item2}");
                 return;
             }
-            angleRecommendationIgnoreObstacle = (float) e.recommendations[0].Item2;
             // angleRecommendationIgnoreObstacle = (float) e.recommendationsWithObstacle[0].Item2;
 
             _angleRecommendationReceivedEventArgs = e;

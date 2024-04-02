@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using DefaultNamespace;
 using EventsEmitter.models;
 using JetBrains.Annotations;
 using Unity.VisualScripting;
@@ -40,7 +41,7 @@ namespace DevelopmentPurpose
 
             datasetFolderPath = datasetFolderPath ?? this.datasetFolderPath;
             if (!IsPathValidRootedLocal(this.datasetFolderPath)) {
-                Debug.LogError($"Invalid path datasetFolderPath, given: {datasetFolderPath}");
+                CustomLogger.Log($"Invalid path datasetFolderPath, given: {datasetFolderPath}");
                 return;
             }
 
@@ -52,7 +53,7 @@ namespace DevelopmentPurpose
             int fileNumber = File.Exists(fileNumberLocation) ? Int32.Parse(File.ReadAllText(fileNumberLocation)) : 0;
             var datasetFileName = Path.Join(datasetFolderPath, $"{fileNumber}.png");
 
-            Debug.Log($"Saving dataset {fileNumber}.png");
+            CustomLogger.Log($"Saving dataset {fileNumber}.png");
             fileNumber++;
             File.WriteAllText(fileNumberLocation, $"{fileNumber}");
 

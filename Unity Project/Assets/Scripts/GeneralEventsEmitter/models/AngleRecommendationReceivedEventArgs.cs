@@ -19,52 +19,54 @@ namespace EventsEmitter.models
          *
          * For more updated information, please see getAngleRecommendation() at Server's C# project, file: RpcFacade.cs
         */
-        public List<Tuple<float, double, Vector2>> recommendations;
+
 
         public Tuple<Vector2?, Vector2?> verticallyClosestRoadLeftRightEdge { get; set; }
-        public Tuple<Vector2?,Vector2?> horizontallyClosestRoadLeftRightEdge { get; set; }
+
         public bool isOffRoad { get; set; }
-        public Tuple<Vector2?[,], Vector2?[,]> roadEdgeList { get; set; }
+        // public Tuple<Vector2?[,], Vector2?[,]> roadEdgeList { get; set; }
+
+
         public Dictionary<int,Direction> obstacleIdVerdicts { get; set; }
         public Dictionary<int, Tuple<float, float, AngleRecommendationReceivedEventArgs>> debugPurposeOnly { get; set; }
         public List<Tuple<float, double, Vector2>> recommendationsWithObstacle { get; set; }
 
 
-        /**
-         * Obstacle is assumed to be in front of the car
-         * currentCameraRotationDegree: 0 means forward, negative means left, and positive means right.
-         *
-         * We need obstacleId to make sure that the Direction recommendation doesn't change due to visual changes as we turn left/right
-         */
-        public Direction getDirectionRecommendationToAvoidObstacle(int obstacleId, float currentCameraRotationDegree, Vector2 obstacleRelativePos) {
-            if (obstacleIdVerdicts.TryGetValue(obstacleId, out var obstacle))
-                return obstacle;
-
-            // normally we would need to inverse the sign (negative/positive) for the rotation, but because we use
-            // different standard, then we don't need to inverse the sign.
-            // different standard: our positive angle means right/clockwise, unity's positive angle to left/ccw
-            var cameraRotationWeight = 0.5f;
-            var rotation = Quaternion.AngleAxis(currentCameraRotationDegree*cameraRotationWeight, Vector3.forward);
-
-            var obstaclePositionRelativeToCameraView = rotation * obstacleRelativePos;
-            var left = roadEdgeList.Item1;
-            var right = roadEdgeList.Item2;
-            var leftDist = closestDistanceToPoints(obstaclePositionRelativeToCameraView, left, Single.NaN);
-            var rightDist = closestDistanceToPoints(obstaclePositionRelativeToCameraView, right, Single.NaN);
-            if (Single.IsNaN(leftDist) || Single.IsNaN(rightDist))
-                return Direction.DEFAULT;
-            if (leftDist + rightDist == 0)
-                return Direction.DEFAULT;
-            var leftDistRatio = leftDist / (leftDist + rightDist);
-            if (leftDistRatio < 0.3)
-                obstacleIdVerdicts[obstacleId] = Direction.RIGHT;
-            else if (leftDistRatio > 0.7)
-                obstacleIdVerdicts[obstacleId] = Direction.LEFT;
-            else obstacleIdVerdicts[obstacleId] = Direction.DEFAULT;
-            var ret = obstacleIdVerdicts[obstacleId];
-            debugPurposeOnly[obstacleId] = new Tuple<float, float, AngleRecommendationReceivedEventArgs>(leftDist, rightDist, this);
-            return ret;
-        }
+        // /**
+        //  * Obstacle is assumed to be in front of the car
+        //  * currentCameraRotationDegree: 0 means forward, negative means left, and positive means right.
+        //  *
+        //  * We need obstacleId to make sure that the Direction recommendation doesn't change due to visual changes as we turn left/right
+        //  */
+        // public Direction getDirectionRecommendationToAvoidObstacle(int obstacleId, float currentCameraRotationDegree, Vector2 obstacleRelativePos) {
+        //     if (obstacleIdVerdicts.TryGetValue(obstacleId, out var obstacle))
+        //         return obstacle;
+        //
+        //     // normally we would need to inverse the sign (negative/positive) for the rotation, but because we use
+        //     // different standard, then we don't need to inverse the sign.
+        //     // different standard: our positive angle means right/clockwise, unity's positive angle to left/ccw
+        //     var cameraRotationWeight = 0.5f;
+        //     var rotation = Quaternion.AngleAxis(currentCameraRotationDegree*cameraRotationWeight, Vector3.forward);
+        //
+        //     var obstaclePositionRelativeToCameraView = rotation * obstacleRelativePos;
+        //     var left = roadEdgeList.Item1;
+        //     var right = roadEdgeList.Item2;
+        //     var leftDist = closestDistanceToPoints(obstaclePositionRelativeToCameraView, left, Single.NaN);
+        //     var rightDist = closestDistanceToPoints(obstaclePositionRelativeToCameraView, right, Single.NaN);
+        //     if (Single.IsNaN(leftDist) || Single.IsNaN(rightDist))
+        //         return Direction.DEFAULT;
+        //     if (leftDist + rightDist == 0)
+        //         return Direction.DEFAULT;
+        //     var leftDistRatio = leftDist / (leftDist + rightDist);
+        //     if (leftDistRatio < 0.3)
+        //         obstacleIdVerdicts[obstacleId] = Direction.RIGHT;
+        //     else if (leftDistRatio > 0.7)
+        //         obstacleIdVerdicts[obstacleId] = Direction.LEFT;
+        //     else obstacleIdVerdicts[obstacleId] = Direction.DEFAULT;
+        //     var ret = obstacleIdVerdicts[obstacleId];
+        //     debugPurposeOnly[obstacleId] = new Tuple<float, float, AngleRecommendationReceivedEventArgs>(leftDist, rightDist, this);
+        //     return ret;
+        // }
 
         public string debugGetDesmosPoints(Vector2 anchor, Vector2?[,] left, Vector2?[,] right ) {
             var ret = new StringBuilder(500);
