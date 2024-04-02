@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Linq;
+using System.Threading;
 using DefaultNamespace;
 using EventsEmitter.models;
 using JetBrains.Annotations;
@@ -20,12 +22,14 @@ namespace Actuators
         public Rigidbody rigidBodyForSpeedSensor;
         public Gyroscope gyroscope;
         public AdditionalUltrasonicSensor _additionalUltrasonic;
+        public GameObject circularUltrasonic;
 
         private ConstSpeedTorqueManager _torqueManager;
         private ObstacleInfoEventArgs _obstacleInfoEventArgs;
         private SpeedSensor _speedSensor;
 
         private Quaternion originalCameraRotationRelativeToParent;
+        private Quaternion originalCircularUltrasonicRotationRelativeToParent;
         public GameObject camera;
         public SteerDirectionManager cameraRotationManager = new SteerDirectionManager(35, 30, 4);
         private float targetCarAngleBasedOnRecommendationAndCamRotation =>
@@ -35,7 +39,7 @@ namespace Actuators
 
 
 
-        private const float backwardTorque = 80;
+        private const float backwardTorque = 120;
         private const float carLength = 2.2f;
         private CarAngularSteeringDegreeCalculator _angularDegreeSteeringCalculator = new CarAngularSteeringDegreeCalculator(
             0.7, 2.88, 0.83, carLength, 3.5 + 0.2);
@@ -48,17 +52,18 @@ namespace Actuators
             _obstacleInfoEventArgs = ObstacleInfoEventArgs.NoObstacle(null, -1);
             _speedSensor = new SpeedSensor(rigidBodyForSpeedSensor);
             originalCameraRotationRelativeToParent = camera.transform.localRotation;
+            originalCircularUltrasonicRotationRelativeToParent = circularUltrasonic.transform.localRotation;
 
             _torqueManager = new ConstSpeedTorqueManager(_speedSensor, 350, -1, 50,
                 0.45f, 45);
         }
 
-        private float? goBackwardUntilTimestamp = null;
-
         private const float EXTREME_SLOPE = 5f;
         private const float MEDIUM_SLOPE = 0.25f;
 
         private void Update() {
+            setBrake(0);
+            modifyMaxSpeedBasedOnSlope();
             updateSteerAngle();
             motorTorque = _torqueManager.getMotorTorque(targetCarAngleBasedOnRecommendationAndCamRotation);
             brakeIfFreeFalling();
@@ -67,15 +72,14 @@ namespace Actuators
             updateCameraRotation();
             CustomLogger.Log($"Recommended: (angle:{targetCarAngleBasedOnRecommendationAndCamRotation:00.00},l:{angleRecommendationCollisionLength:00.00}) " +
                       $"actualAngle: {steerAngle:00.00} " +
-                      $"Speed: {_speedSensor.getCurrentSpeed():00.00}  ObsDist: {_obstacleInfoEventArgs.forwardObstacleDistance:00.00}");
+                      $"Speed: {_speedSensor.getCurrentSpeed():00.00}  torque: {motorTorque:00.00}");
         }
 
         private void updateSteerAngle() {
-            modifyMaxSpeedBasedOnSlope();
             var angle = targetCarAngleBasedOnRecommendationAndCamRotation * 0.75f;
             // angle = (Math.Abs(angle) < 4)? 0f : angle - 4;
-            if (gyroscope.getSlope() >= EXTREME_SLOPE)
-                angle = getAngleThatWillPutTheCarInMiddleOfRoad(angle);
+            // if (gyroscope.getSlope() >= EXTREME_SLOPE)
+                // angle = getAngleThatWillPutTheCarInMiddleOfRoad(angle);
             angle = turnLeftOrRightIfObstacleWillBeHit(angle);
             if (Math.Abs(angle) <= 45) {
                 steerAngle = angle;
@@ -86,13 +90,16 @@ namespace Actuators
             }
         }
 
+        private float lastTimeObstacleWasFound = 13.0f;
         private void modifyMaxSpeedBasedOnSlope() {
             var slope = gyroscope.getSlope();
             if (slope >= EXTREME_SLOPE)
                 _torqueManager.maxSpeed = 8;
             else if (slope >= MEDIUM_SLOPE)
                 _torqueManager.maxSpeed = 8;
-            else _torqueManager.maxSpeed = 10;
+            else if (Time.time - lastTimeObstacleWasFound < 1)
+                _torqueManager.maxSpeed = 12;
+            else _torqueManager.maxSpeed = 16;
         }
 
         private Direction getDirectionThatWillPutTheCarInMiddleOfRoad() {
@@ -138,8 +145,8 @@ namespace Actuators
                 return 0;
             var ratio = getLeftRightRatio();
             if (dir == Direction.RIGHT)
-                return 2 * (float)Math.Tan(1 / ratio.Item3);
-            return -2  * (float)Math.Tan(ratio.Item3);
+                return 5 * (float)Math.Atan(1 / ratio.Item3);
+            return -5  * (float)Math.Atan(ratio.Item3);
         }
 
         private void brakeIfFreeFalling() {
@@ -159,8 +166,11 @@ namespace Actuators
             var target = (Math.Abs(targetCameraAngleBasedOnRecommendationAndCamRotation) < 3)?
                 0 : targetCameraAngleBasedOnRecommendationAndCamRotation;
             cameraRotationManager.updateSteerBasedOnAngle(target);
+
             camera.transform.localRotation = originalCameraRotationRelativeToParent
                                         *Quaternion.AngleAxis(cameraRotationManager.getSteerAngle(), Vector3.up);
+            // circularUltrasonic.transform.localRotation = originalCircularUltrasonicRotationRelativeToParent
+                                                         // *Quaternion.AngleAxis(cameraRotationManager.getSteerAngle()*0.2, Vector3.up);
             Debug.DrawLine(camera.transform.position,
                 camera.transform.position +
                 Quaternion.AngleAxis(cameraRotationManager.getSteerAngle(), Vector3.up)*this.transform.forward.normalized*10,
@@ -189,16 +199,16 @@ namespace Actuators
 
 
             if (_additionalUltrasonic.rearLeftObstacleDetected && angle < 0) {
+                refreshObstacleFoundTimeTracker();
                 var obstDist = _additionalUltrasonic.rearLeft.detectDistance();
                 var fromAngle = angle;
-                angle = additionalDegreeToMakeSure + _angularDegreeSteeringCalculator.getRecommendedAlpha1ToAvoidObstacle(
-                    obstDist, onImpossibleDefaultValue: 45);
+                angle = additionalDegreeToMakeSure;
                 CustomLogger.Log($"Rear-left obstacle detected at {obstDist}. Modifying angle from {fromAngle} to {angle}");
             }else if (_additionalUltrasonic.rearRightObstacleDetected && angle > 0) {
+                refreshObstacleFoundTimeTracker();
                 var obstDist = _additionalUltrasonic.rearRight.detectDistance();
                 var fromAngle = angle;
-                angle = additionalDegreeToMakeSure + _angularDegreeSteeringCalculator.getRecommendedAlpha1ToAvoidObstacle(
-                    obstDist, onImpossibleDefaultValue: 45);
+                angle = additionalDegreeToMakeSure;
                 angle = -angle;
                 CustomLogger.Log($"Rear-right obstacle detected at {obstDist}. Modifying angle from {fromAngle} to {angle}");
             }
@@ -206,12 +216,14 @@ namespace Actuators
             if (_additionalUltrasonic.frontObstacleDetected
                 && _angularDegreeSteeringCalculator.willHitObstacle(targetCarAngleBasedOnRecommendationAndCamRotation, _additionalUltrasonic.frontObstacleDistance)
             ) {
+                refreshObstacleFoundTimeTracker();
                 CustomLogger.Log($"Front-obstacle detected and will be hit");
                 var sign = Math.Sign(targetCarAngleBasedOnRecommendationAndCamRotation);
                 sign = (sign == 0) ? -1 : sign;
                 var frontObstacle = _additionalUltrasonic.frontObstacleDistance;
                 var calculatedAngle = _angularDegreeSteeringCalculator.getRecommendedAlpha1ToAvoidObstacle(
-                    frontObstacle, onImpossibleDefaultValue: Single.NaN);
+                    frontObstacle, maxDegree: 60,  // will be capped
+                    onImpossibleDefaultValue: Single.NaN);
                 angle = sign * (additionalDegreeToMakeSure + calculatedAngle);
                 if (!Single.IsNaN(angle)) {
                     CustomLogger.Log($"Modifying angle to {angle}. targetCarAngleBasedOnRecommendationAndCamRotation={targetCarAngleBasedOnRecommendationAndCamRotation:00.00}," +
@@ -219,18 +231,51 @@ namespace Actuators
                     return angle;
                 }
 
-                var left = _additionalUltrasonic.frontLeft.detectDistance(Single.PositiveInfinity);
-                var right = _additionalUltrasonic.frontRight.detectDistance(Single.PositiveInfinity);
+                var left = _additionalUltrasonic.frontLeft.detectDistance(-1);
+                var right = _additionalUltrasonic.frontRight.detectDistance(-1);
                 var turnDegree = 45;
                 // var turnDegree = Math.Min(45f / frontObstacleDistance!.Value, 45f);
+                setBrake(_speedSensor.getCurrentSpeed() * 10);
 
-                if (left > right)
-                    turnDegree = -turnDegree;
+                if (left != -1 && right != -1) {
+                    return sign * 45;
+                    // StartCoroutine(motorTorqueCoroutine(2, -backwardTorque, null));
+                    // CustomLogger.Log($"Both left right has obstacle, going backward...");
+                    // return 0;
+                }
+                if (left == -1) {  // no obstacle left side
+                    turnDegree = -turnDegree;  // going left
+                }
                 CustomLogger.Log($"Impossible to achieve the angle. Will go to the other side {turnDegree}. Obst: {left},{right}");
                 return turnDegree;
             }
 
             return angle;
+        }
+
+        private void setBrake(float brake) {
+            leftBack.brakeTorque = brake;
+            rightBack.brakeTorque = brake;
+        }
+
+        private void refreshObstacleFoundTimeTracker() {
+            lastTimeObstacleWasFound = Math.Max(Time.time, lastTimeObstacleWasFound);
+        }
+
+        [CanBeNull] private CancellationTokenSource motorTorqueCoroutinCancellation = null;
+        private IEnumerator motorTorqueCoroutine(float duration, float torque, [CanBeNull] Func<bool> keepRunning) {
+            motorTorqueCoroutinCancellation?.Cancel();
+            motorTorqueCoroutinCancellation = new CancellationTokenSource();
+            var cancellationToken = motorTorqueCoroutinCancellation.Token;
+            var prevTorque = motorTorque;
+            var end = Time.time + duration;
+            while (Time.time < end && !cancellationToken.IsCancellationRequested && (keepRunning?.Invoke() ?? true)) {
+                motorTorque = torque;
+                yield return null;
+            }
+            motorTorque = prevTorque;
+            motorTorqueCoroutinCancellation = null;
+            yield break;
         }
 
         private Direction? avoidingDirection = null;
@@ -272,43 +317,29 @@ namespace Actuators
         }
 
         private void handleGoingBackwardBecauseWhenObstacleAlreadyHit() {
+            Func<bool> runningCriteria = () =>
+                _angularDegreeSteeringCalculator.willHitObstacle(40, _additionalUltrasonic.frontObstacleDistance);
+
             if (_additionalUltrasonic.frontObstacleDistance != null
                 && _additionalUltrasonic.frontObstacleDistance < 1
                 && _speedSensor.getCurrentSpeed() < 0.5
+                && motorTorque > 0
             ) {  // already hit the object and cannot move
-                CustomLogger.Log("obstacle was hit. Moving torque backward...");
-                goBackwardUntilTimestamp = Time.time + 2;
-                doNotUseRoadRecommendation = Time.time + 6;
-            }
-            if (goBackwardUntilTimestamp != null && Time.time < goBackwardUntilTimestamp) {
-                CustomLogger.Log("Going backward timer is still active... Moving backward...");
-                motorTorque = -backwardTorque;
-                if (_speedSensor.isGoingForward(transform)) {
-                    CustomLogger.Log("Still moving forward... Keep setting the torque backward...");
-                    goBackwardUntilTimestamp = Time.time + 1;  // refresh
-                    doNotUseRoadRecommendation = Time.time + 6;
-                }
-                if (_angularDegreeSteeringCalculator.willHitObstacle(40, _additionalUltrasonic.frontObstacleDistance)) {
-                    CustomLogger.Log("Will hit obstacle, keep setting torque backward...");
-                    goBackwardUntilTimestamp = Time.time + 1;  // refresh
-                    doNotUseRoadRecommendation = Time.time + 6;
-                }
-            } else if (Time.time < goBackwardUntilTimestamp + 2) {
-                // if (!_speedSensor.isGoingForward(transform))
-                    // steerAngle = Math.Abs(steerAngle) > 20 ? steerAngle : -Math.Sign(steerAngle) * 20;
-                // else
-                    // steerAngle = Math.Abs(steerAngle) > 20 ? steerAngle : Math.Sign(steerAngle) * 20;
+                refreshObstacleFoundTimeTracker();
+                CustomLogger.Log("OBSTACLE WAS HIT");
+                StartCoroutine(motorTorqueCoroutine(5, -backwardTorque, runningCriteria));
             }
         }
 
         public void OnObstacleInfoUpdated(ObstacleInfoEventArgs obstacleInfoEvent) {
             _obstacleInfoEventArgs = obstacleInfoEvent;
+            refreshObstacleFoundTimeTracker();
         }
         public void OnObstacleHit() {
-            var noActiveGoBackwardTimestamp =
-                (goBackwardUntilTimestamp == null || goBackwardUntilTimestamp < Time.time);
-            if (_speedSensor.getCurrentSpeed() < 0.5 && noActiveGoBackwardTimestamp)
-                goBackwardUntilTimestamp = Time.time + 2;
+            Func<bool> runningCriteria = () =>
+                _angularDegreeSteeringCalculator.willHitObstacle(40, _additionalUltrasonic.frontObstacleDistance);
+            if (_speedSensor.getCurrentSpeed() < 0.5 && motorTorque >= 0 && motorTorqueCoroutinCancellation == null)
+                StartCoroutine(motorTorqueCoroutine(5, -backwardTorque, runningCriteria));
             CustomLogger.Log("Obstacle hit detection from circular ultrasonic");
         }
 
@@ -358,7 +389,7 @@ namespace Actuators
 
         public float motorTorque {
             get {
-                return leftBack.motorTorque;
+                return Math.Max(leftBack.motorTorque, rightBack.motorTorque);
             }
             set {
                 leftBack.motorTorque = value;

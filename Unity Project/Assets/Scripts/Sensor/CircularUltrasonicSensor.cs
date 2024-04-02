@@ -36,7 +36,7 @@ namespace Sensor
         }
 
         public List<Tuple<System.Numerics.Vector2, System.Numerics.Vector2>> getObstacles() {
-            var rotation = -carActuatorManager.cameraRotationManager.getSteerAngle();
+            var rotation = -carActuatorManager.cameraRotationManager.getSteerAngle() * 0.5;
 
             List<Tuple<System.Numerics.Vector2, System.Numerics.Vector2>> ret = new();
             for (int i = 1; i < ultrasonics.Length-1; i++) {  // exclude first and last index because they're null
@@ -45,8 +45,8 @@ namespace Sensor
                     continue;
                 if (distance < 0.5)
                     ObstacleHit?.Invoke();
-                var leftPoint = getBoundaries(i, i-1, distance.Value, rotation);
-                var rightPoint = getBoundaries(i, i+1, distance.Value, rotation);
+                var leftPoint = getBoundaries(i, i - 1, distance.Value, (float)rotation);
+                var rightPoint = getBoundaries(i, i+1, distance.Value, (float)rotation);
                 if (leftPoint != null)
                     ret.Add(leftPoint);
                 if (rightPoint != null)
