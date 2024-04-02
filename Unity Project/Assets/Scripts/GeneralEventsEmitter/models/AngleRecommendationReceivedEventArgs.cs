@@ -19,7 +19,7 @@ namespace EventsEmitter.models
          *
          * For more updated information, please see getAngleRecommendation() at Server's C# project, file: RpcFacade.cs
         */
-        public List<Tuple<float, double, Vector2>> recomomendations;
+        public List<Tuple<float, double, Vector2>> recommendations;
 
         public Tuple<Vector2?, Vector2?> verticallyClosestRoadLeftRightEdge { get; set; }
         public Tuple<Vector2?,Vector2?> horizontallyClosestRoadLeftRightEdge { get; set; }
@@ -27,6 +27,7 @@ namespace EventsEmitter.models
         public Tuple<Vector2?[,], Vector2?[,]> roadEdgeList { get; set; }
         public Dictionary<int,Direction> obstacleIdVerdicts { get; set; }
         public Dictionary<int, Tuple<float, float, AngleRecommendationReceivedEventArgs>> debugPurposeOnly { get; set; }
+        public List<Tuple<float, double, Vector2>> recommendationsWithObstacle { get; set; }
 
 
         /**

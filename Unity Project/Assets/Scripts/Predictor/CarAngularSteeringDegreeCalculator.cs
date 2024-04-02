@@ -94,9 +94,10 @@ namespace Actuators
             if (Math.Abs(theta1 - 90) < 0.001 && !Double.IsPositiveInfinity(obsDistance))  // if going straight, prevent potential zero division error
                 return true;
             var ra = calculateRaFromTheta1(theta1);
-            var ro = calculateRo(ra);
+            var ro = calculateRo(ra, obsDistance);
             var rv1 = calculateRv1(ra);
             var rv2 = calculateRv2(ra);
+            Debug.Assert(ra < ro + Lo);
             return (ro < rv1) || (ro < rv2);
         }
 
@@ -105,7 +106,7 @@ namespace Actuators
                 return;
             Ra = calculateRaFromTheta1(Theta1);
             Theta2 = calculateTheta2(Ra);
-            Ro = calculateRo(Ra);
+            Ro = calculateRo(Ra, d);
             Rv1 = calculateRv1(Ra);
             Rv2 = calculateRv2(Ra);
             inputUpdated = false;
@@ -120,8 +121,8 @@ namespace Actuators
             return Math.Atan((Ra + L) / P2);
         }
 
-        private double calculateRo(double Ra) {
-            return Math.Sqrt(square(Ra - Lo) + square(P1 + P2 + d));
+        private double calculateRo(double Ra, double d) {
+            return Math.Sqrt(square(Ra) + square(P1 + P2 + d)) - Lo;
         }
         private double calculateRv1(double Ra) {
             return Math.Sqrt(square(Ra + L) + square(P1 + P2));
@@ -134,17 +135,17 @@ namespace Actuators
             return x * x;
         }
 
-        public float getRecommendedAlpha1ToAvoidObstacle() {
-            var recommendedRaToMakeRv1EqualsRo =
-                -(square(P1 + P2) - square(P1 + P2 + d) + square(L) - square(Lo)) / (2 * Lo + 2 * L);
-            var recommendedRaToMakeRv2EqualsRo =
-                -(square(P3) + square(L) - square(Lo) - square(P1+P2+d)) / (2*Lo+2*L);
-            var theta1a = Math.Atan(recommendedRaToMakeRv1EqualsRo / P2);
-            var alpha1a = 90 - toDeg(theta1a);
-            var theta1b = Math.Atan(recommendedRaToMakeRv2EqualsRo / P2);
-            var alpha1b = 90 - toDeg(theta1b);
-            Debug.Assert(theta1a >= 0 || theta1b >= 0);
-            return (float) Math.Max(alpha1a, alpha1b);
+        public float getRecommendedAlpha1ToAvoidObstacle(double? obstacleDistance=null, int maxDegree=45, float onImpossibleDefaultValue=45) {
+            var obsDist = this.d;
+            if (obstacleDistance != null)
+                obsDist = obstacleDistance.Value;
+
+            for (int i = 1; i <= maxDegree; i++) {
+                if (!willHitObstacle(Alpha1: i, obstacleDistance: obsDist))
+                    return i;
+            }
+
+            return onImpossibleDefaultValue;  // when no possible angle found
         }
 
         private static double toDeg(double rads) {

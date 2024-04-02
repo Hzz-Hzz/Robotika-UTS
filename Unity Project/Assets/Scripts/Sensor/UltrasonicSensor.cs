@@ -20,14 +20,14 @@ public class UltrasonicSensor : MonoBehaviour
     }
 
     private readonly string targetTag = "Terrain";
-    public float? detectDistance() {
+    public float? detectDistance(float? defaultValue=null) {
         RaycastHit raycastHit;
         var pos = transform.position;
 
         var raycastResult = Physics.RaycastAll(pos, transform.forward, sensorLength);
         raycastResult = raycastResult.Where(e => e.collider.CompareTag(targetTag)).ToArray();
         if (raycastResult.Length == 0) {
-            return null;
+            return defaultValue;
         }
 
         RaycastHit closest = raycastResult[0];

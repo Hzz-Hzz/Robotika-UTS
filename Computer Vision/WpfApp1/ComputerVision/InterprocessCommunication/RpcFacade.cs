@@ -1,4 +1,5 @@
 global using AngleRecommendationsReturnType = System.Collections.Generic.List<System.Tuple<float, double, System.Numerics.Vector2>>;
+global using Obstacles = System.Collections.Generic.List<System.Tuple<System.Numerics.Vector2, System.Numerics.Vector2>>;
 
 using System;
 using System.Collections.Generic;
@@ -27,10 +28,10 @@ public class RpcFacade
     /**
      * See docs at  SurroundingMap.cs at calculateRecommendedIntersectionPoints()
      */
-    public AngleRecommendationsReturnType? getAngleRecommendation(byte[] bytes) {
+    public AngleRecommendationsReturnType? getAngleRecommendation(byte[] bytes, Obstacles obstacles) {
         if (bytes == null)
             return new AngleRecommendationsReturnType();
-        var ret = viewModelVisualServer.processImage(bytes);
+        var ret = viewModelVisualServer.processImage(bytes, obstacles);
         return ret;
     }
 

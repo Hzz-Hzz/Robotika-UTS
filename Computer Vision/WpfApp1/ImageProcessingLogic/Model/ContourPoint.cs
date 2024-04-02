@@ -92,6 +92,9 @@ public class ContourPoint
         var area = CvInvoke.ContourArea(rawContour);
         return new ContourPoint(x, y, area, link);
     }
+    public static ContourPoint? fromVector2(Vector2 vector2, ContourPoint? link=null) {
+        return new ContourPoint(vector2.X, vector2.Y, 0, link);
+    }
 
     public ContourPoint(double x, double y, double area, ContourPoint? link) {
         if (Double.IsNaN(x)) {

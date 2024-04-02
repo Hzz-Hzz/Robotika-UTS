@@ -46,7 +46,7 @@ namespace Actuators
         }
 
         public void OnReceiveAngleRecommendation(AngleRecommendationReceivedEventArgs e) {
-            var recommendation = e.recomomendations;
+            var recommendation = e.recommendations;
             if (recommendation == null)
                 return;
             if (recommendation.Count == 0) {

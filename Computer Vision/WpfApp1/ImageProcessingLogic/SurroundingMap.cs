@@ -1,5 +1,10 @@
 global using AngleRecommendation = System.Tuple<float, double, System.Numerics.Vector2>;
 global using AngleRecommendationsReturnType = System.Collections.Generic.List<System.Tuple<float, double, System.Numerics.Vector2>>;
+global using Obstacles = System.Collections.Generic.List<System.Tuple<System.Numerics.Vector2, System.Numerics.Vector2>>;
+global using Obstacle = System.Tuple<System.Numerics.Vector2, System.Numerics.Vector2>;
+
+
+
 using System.Collections;
 using System.Diagnostics;
 using System.Drawing;
@@ -22,7 +27,7 @@ public class SurroundingMap
     private const float worldSpaceStartY = 0;
     private const float worldSpaceEndY = 30;
     private readonly float maximumDegree = (float) Math.PI / 36f;
-    private readonly float contourPointCircleRadius = 0f;
+    private readonly float contourPointCircleRadius = 1.5f;
     private readonly float contourPointCircleRadiusMinimumIntersectionDistance = 0;
 
     private static IContourPointTransformationDecorator _transformation = new TranslationToCartesiusDecorator(
@@ -52,8 +57,9 @@ public class SurroundingMap
 
 
     private AngleRecommendationsReturnType recommendedAngles;
-
-    public void updateIntersectionPoints(bool includeAnglesThatDoesNotIntersects=true, float extensionLength=0f) {
+    public ContourList obstacles;
+    public void updateIntersectionPoints(ContourList obstacles, bool includeAnglesThatDoesNotIntersects=true, float extensionLength=0f) {
+        this.obstacles = obstacles;
         var rayCastLines = this.raycastLines;
         // to make a smooth angle recommendatin, we should include a perfect 90 degree raycast
         // rayCastLines.AddRange(getCircleRayCastLines(origin, 10, (float)Math.PI/2,
@@ -67,12 +73,15 @@ public class SurroundingMap
 
         foreach (var rayCastTarget in rayCastLines) {
             var raycastResult = roadEdgeList.getIntersectionPoints(origin, rayCastTarget, extensionLength);
+            var obstacleRaycastResult = obstacles.getIntersectionPoints(origin, rayCastTarget, extensionLength);
 
             if (closestX > contourPointCircleRadius)
                 raycastResult.AddRange(roadEdgeList.getClosestIntersectionPointsTowardCircle(origin,
                 rayCastTarget, contourPointCircleRadius, contourPointCircleRadiusMinimumIntersectionDistance,
                 (cp) => cp.link==null||cp.backwardLink==null));
-            ifOneRayIntersectsTwoPointFartherThanThresholdMeansWeReOffRoad(raycastResult);
+            // ifOneRayIntersectsTwoPointFartherThanThresholdMeansWeReOffRoad(raycastResult);
+
+            raycastResult.AddRange(obstacleRaycastResult);
             var shortestCollisionPoint = selectClosestPoint(origin, raycastResult);
             if (shortestCollisionPoint != null)
                 result.Add(shortestCollisionPoint);
@@ -81,8 +90,8 @@ public class SurroundingMap
         }
         intersectionPoints = new ContourList(result, -1, -1);
         recommendedAngles = calculateRecommendedIntersectionPoints();
-        if (_offroad)
-            handleOffRoadByModifyingRecommendedAngles();
+        // if (_offroad)
+            // handleOffRoadByModifyingRecommendedAngles();
     }
 
     private bool _offroad = false;
@@ -341,6 +350,8 @@ public class SurroundingMap
 
 
 
+    private ContourDrawer obstaclesLinkDrawer = new (3, new MCvScalar(100, 255, 255), LineType.FourConnected);
+
     private ContourDrawer roadEdgeContourPointDrawer = new (1, new MCvScalar(255, 255, 255), LineType.Filled);
     private ContourDrawer roadEdgeContourPointDirectionDrawer = new (1, new MCvScalar(150, 255, 150), LineType.FourConnected);
     private ContourDrawer intersectionContourPointDrawer = new (2, new MCvScalar(255, 150, 150), LineType.Filled);
@@ -349,10 +360,11 @@ public class SurroundingMap
             worldSpaceStartX, worldSpaceStartY,
             worldSpaceEndX, worldSpaceEndY);
 
+        var transformedObstacles = obstacles.applyTransformation(transformerToDrawOnMat);
         var transformedRoadEdgeList = roadEdgeList.applyTransformation(transformerToDrawOnMat);
 
         roadEdgeContourPointDrawer.drawContourPoints(transformedRoadEdgeList, mat, 1);
-        roadEdgeContourPointDrawer.drawContourPoints(transformedRoadEdgeList, mat,
+        roadEdgeContourPointDrawer.drawContourPoints(transformedRoadEdgeList, mat,  // draw circles contourPointCircleRadius
             (int)(mat.Height*contourPointCircleRadius/(worldSpaceEndY-worldSpaceStartY)/2));
         roadEdgeContourPointDirectionDrawer.drawContourLinks(transformedRoadEdgeList, mat, 0.1);
         if (intersectionPoints == null)
@@ -368,6 +380,7 @@ public class SurroundingMap
                 getMostRecommendedIntersectionPoints()[0].Item3.toContourPoint());
             CvInvoke.Line(mat, originContourPoint.point,  mostRecommended!.point, new MCvScalar(0, 255, 0));
         }
+        obstaclesLinkDrawer.drawContourLinks(transformedObstacles, mat, 0);
     }
 
     private void drawRaycastLinesUntilItsEnd(Mat mat, ContourPoint originContourPoint, IContourPointTransformationDecorator transformerToDrawOnMat) {

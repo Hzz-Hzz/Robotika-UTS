@@ -98,14 +98,15 @@ public class ViewModelVisualServer : INotifyPropertyChanged
     /**
      * This returns tuples of (distance, recommended angle in rads)
      */
-    public AngleRecommendationsReturnType? processImage(byte[] imageByte) {
+    public AngleRecommendationsReturnType? processImage(byte[] imageByte, Obstacles obstacles) {
         var converter = new ByteToCroppedImageFactory();
         var image = converter.convert(imageByte);
 
         try {
             updateOriginalImage(image);
             var contourList = updateProcessedImageAndGetContourList(image);
-            return updateSurrondingMap(contourList, image.Height, image.Width);
+            return updateSurrondingMap(contourList, image.Height, image.Width,
+                obstaclesToContourList(obstacles, image.Width, image.Height));
         }
         catch (ArgumentException e) {
             if (e.Message.Contains("Parameter is not valid")) {
@@ -114,6 +115,18 @@ public class ViewModelVisualServer : INotifyPropertyChanged
             }
             throw;
         }
+    }
+
+    private ContourList obstaclesToContourList(Obstacles obstacles, int sourceImageWidth, int sourceImageHeight) {
+        var list = new List<ContourPoint>();
+        foreach (var obstacle in obstacles) {
+            var end = ContourPoint.fromVector2(obstacle.Item2);
+            var start = ContourPoint.fromVector2(obstacle.Item1, end);
+            list.Add(start);
+            list.Add(end);
+        }
+
+        return new ContourList(list, sourceImageWidth, sourceImageHeight);
     }
 
     private void updateOriginalImage(Image<Bgr, byte> image) {
@@ -142,9 +155,10 @@ public class ViewModelVisualServer : INotifyPropertyChanged
     /**
      * This returns tuples of (distance, recommended angle in rads)
      */
-    private AngleRecommendationsReturnType updateSurrondingMap(ContourList contourList, int rows, int cols) {
+    private AngleRecommendationsReturnType updateSurrondingMap(ContourList contourList, int rows, int cols,
+        ContourList obstacles) {
         prevSurroundingMap = SurroundingMap.fromCameraContourList(contourList);
-        prevSurroundingMap.updateIntersectionPoints(extensionLength: 0.1f);
+        prevSurroundingMap.updateIntersectionPoints(obstacles, extensionLength: 0.1f);
 
         using (var mat = new Mat(rows, cols, DepthType.Cv8U, 3)) {
             mat.SetTo(new MCvScalar(0, 0, 0));

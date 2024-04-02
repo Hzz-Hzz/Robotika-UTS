@@ -9,6 +9,7 @@ using UnityEngine;
 
 
 using AngleRecommendation = System.Tuple<float, double, UnityEngine.Vector2>;
+using Obstacles = System.Collections.Generic.List<System.Tuple<System.Numerics.Vector2, System.Numerics.Vector2>>;
 
 
 // facade to do Remote Procedural Call
@@ -29,13 +30,13 @@ public class RpcFacade
 
     [CanBeNull] private List<AngleRecommendation> _getAngleRecommendationCachedResult;
     [ItemCanBeNull]
-    public async Task<List<AngleRecommendation>> getAngleRecommendation(byte[] bytes) {
+    public async Task<List<AngleRecommendation>> getAngleRecommendation(byte[] bytes, Obstacles obstacles) {
         if (_stopwatch.ElapsedMilliseconds < 1000 / 20 && _getAngleRecommendationCachedResult != null) // 20FPS cap
             return _getAngleRecommendationCachedResult;
         _stopwatch.Restart();
 
         var result = await interprocessCommunication.call<List<Tuple<float, double, System.Numerics.Vector2>>?>(
-            QueryCommandsEnum.GET_ANGLE_RECOMMENDATION, bytes);
+            QueryCommandsEnum.GET_ANGLE_RECOMMENDATION, bytes, obstacles);
         _getAngleRecommendationCachedResult = result.Select(e=>
             new AngleRecommendation(e.Item1, e.Item2, new Vector2(e.Item3.X, e.Item3.Y))).ToList();
         return _getAngleRecommendationCachedResult;
