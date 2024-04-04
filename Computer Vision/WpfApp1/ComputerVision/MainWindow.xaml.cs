@@ -12,6 +12,7 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using WpfApp1.Emgucv_Wrapper;
 using Color = System.Windows.Media.Color;
 using Image = System.Windows.Controls.Image;
 using Point = System.Windows.Point;
@@ -34,6 +35,12 @@ namespace WpfApp1
 
             communication = new RpcFacade(viewModel);
             Task.Run(communication.startListening);
+            if (!GpuCpuMat.cudaAvailable) {
+                MessageBox.Show("Unable to detect CUDA GPU. CUDA GPU is recommended for performance (and is allowed by Prof Wisnu). " +
+                                "You can still continue to run this app (will use CPU), but there might be some Robot's inaccurate movement due to longer processing time",
+                    "Unable to detect CUDA GPU");
+                Title += " (CPU Mode)";
+            }
         }
 
         private SettingsPersistenceLogic settingsPersistence = new("settings.xml");
