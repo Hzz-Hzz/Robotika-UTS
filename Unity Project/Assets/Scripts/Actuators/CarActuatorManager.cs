@@ -76,9 +76,6 @@ namespace Actuators
 
         private void updateSteerAngle() {
             var angle = targetCarAngleBasedOnRecommendationAndCamRotation * 0.75f;
-            // angle = (Math.Abs(angle) < 4)? 0f : angle - 4;
-            // if (gyroscope.getSlope() >= EXTREME_SLOPE)
-                // angle = getAngleThatWillPutTheCarInMiddleOfRoad(angle);
             angle = turnLeftOrRightIfObstacleWillBeHit(angle);
             if (Math.Abs(angle) <= 45) {
                 steerAngle = angle;
