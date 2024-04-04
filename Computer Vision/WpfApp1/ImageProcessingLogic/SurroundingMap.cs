@@ -42,7 +42,7 @@ public class SurroundingMap
     public ContourList? intersectionPoints { get; private set; }
 
 
-    public const float raycastLength = 50;
+    public const float raycastLength = 18;
     private List<Vector2> raycastLines {
         get {
             var angleRange = getMinAndMaxAngleFromContourPoints(roadEdgeList.contours);
