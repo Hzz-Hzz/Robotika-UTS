@@ -126,27 +126,9 @@ public class MainRoadImageProcessing
         targetMat.MergeFrom(splittedChannel);
     }
 
-    private Image<Bgr, byte> cropUpperPart(Image<Bgr, byte> originalImage, int percentage) {
-        var oldRoi = originalImage.ROI;
-        originalImage.ROI = new Rectangle(0, percentage * originalImage.Height / 100, originalImage.Width, originalImage.Height);
-        var ret = originalImage.Copy();
-        originalImage.ROI = oldRoi;
-        return ret;
-    }
-
-
     static GpuCpuMat imageToGpuMat(Image<Bgr, byte> image) {
         var ret = GpuCpuMat.fromImage(image);
         ret.tryToGpu();
         return ret;
     }
-
-
-
-    static BitmapImage matToImageSource(Mat mat)
-    {
-        var bitmap = mat.ToImage<Bgr, Byte>().ToBitmap();
-        return ImageUtility.BitmapToImageSource(bitmap);
-    }
-
 }

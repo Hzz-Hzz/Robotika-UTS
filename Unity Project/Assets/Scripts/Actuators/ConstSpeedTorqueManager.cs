@@ -9,17 +9,17 @@ namespace Actuators
         public float maxSpeed { get; set; }
         public float steadyTorque { get; set; }
         public float maxMotorTorque = 30f;
-        public float speedAtExtreemeSteeringDegree = 0.1f;  // 10% by default
+        public float speedMultiplierAtExtreemeSteeringDegree = 0.1f;  // 10% by default
         public float extremeStreeingDegree = 55.0f;
 
         private int speedUp = 0;  // 0 means steady, 1 means speed up, -1 means go backward
 
-        public ConstSpeedTorqueManager(SpeedSensor speedSensor,  float maxMotorTorque, float maxSpeed, float steadyTorque, float speedAtExtreemeSteeringDegree, float extremeStreeingDegree) {
+        public ConstSpeedTorqueManager(SpeedSensor speedSensor,  float maxMotorTorque, float maxSpeed, float steadyTorque, float speedMultiplierAtExtreemeSteeringDegree, float extremeStreeingDegree) {
             this.speedSensor = speedSensor;
             this.steadyTorque = steadyTorque;
             this.maxSpeed = maxSpeed;
             this.maxMotorTorque = maxMotorTorque;
-            this.speedAtExtreemeSteeringDegree = speedAtExtreemeSteeringDegree;
+            this.speedMultiplierAtExtreemeSteeringDegree = speedMultiplierAtExtreemeSteeringDegree;
             this.extremeStreeingDegree = extremeStreeingDegree;
         }
 
@@ -53,7 +53,7 @@ namespace Actuators
             // --> a = 1/(torqueScaleAtExtreemeSteeringDegree * extremeStreeingDegree) - c/extremeStreeingDegree
 
             var c = 1;
-            var a = 1 / (speedAtExtreemeSteeringDegree * extremeStreeingDegree) - c / extremeStreeingDegree;
+            var a = 1 / (speedMultiplierAtExtreemeSteeringDegree * extremeStreeingDegree) - c / extremeStreeingDegree;
             // var a = 1 / (t * s) - c / s;
             var speedMultiplier = 1 / (a*steeringDegree + c);
             return (float)(speedMultiplier * maxSpeed);

@@ -54,12 +54,11 @@ namespace Actuators
             originalCameraRotationRelativeToParent = camera.transform.localRotation;
             originalCircularUltrasonicRotationRelativeToParent = circularUltrasonic.transform.localRotation;
 
-            _torqueManager = new ConstSpeedTorqueManager(_speedSensor, 350, -1, 50,
+            _torqueManager = new ConstSpeedTorqueManager(_speedSensor, 350, 16, 50,
                 0.45f, 45);
         }
 
-        private const float EXTREME_SLOPE = 5f;
-        private const float MEDIUM_SLOPE = 0.25f;
+
 
         private void Update() {
             setBrake(0);
@@ -91,6 +90,9 @@ namespace Actuators
         }
 
         private float lastTimeObstacleWasFound = 13.0f;
+
+        private const float EXTREME_SLOPE = 5f;
+        private const float MEDIUM_SLOPE = 0.25f;
         private void modifyMaxSpeedBasedOnSlope() {
             var slope = gyroscope.getSlope();
             if (slope >= EXTREME_SLOPE)
