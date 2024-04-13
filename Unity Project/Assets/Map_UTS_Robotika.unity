@@ -3127,7 +3127,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1857dae6c787f15448ff77a07d6ff4c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sensorLength: 20
+  sensorLength: 40
 --- !u!1 &134315519 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 193c4ffb9d60d2148874c308bbd283a0, type: 3}
@@ -4350,7 +4350,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1857dae6c787f15448ff77a07d6ff4c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sensorLength: 20
+  sensorLength: 40
 --- !u!1001 &197279015
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6896,7 +6896,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1857dae6c787f15448ff77a07d6ff4c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sensorLength: 20
+  sensorLength: 40
 --- !u!1001 &349408758
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -19033,7 +19033,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1857dae6c787f15448ff77a07d6ff4c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sensorLength: 20
+  sensorLength: 40
 --- !u!1 &998971117 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6735325377289900391, guid: 233c6ac239f5f764f802f62bea56397e, type: 3}
@@ -19984,7 +19984,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!81 &1042589101
 AudioListener:
   m_ObjectHideFlags: 0
@@ -24836,14 +24836,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1297935000}
-  m_LocalRotation: {x: 0.034894176, y: 0.017441817, z: -0.0006090816, w: 0.9992386}
+  m_LocalRotation: {x: 0.034894176, y: -0.017441817, z: 0.0006090816, w: 0.9992386}
   m_LocalPosition: {x: -1.1, y: 0.57665676, z: 2.121701}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1819061415}
   m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 4, y: 2, z: 0}
+  m_LocalEulerAnglesHint: {x: 4, y: -2, z: 0}
 --- !u!114 &1297935002
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24856,7 +24856,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1857dae6c787f15448ff77a07d6ff4c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sensorLength: 20
+  sensorLength: 40
 --- !u!1 &1298936507 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2927259199662858590, guid: 1060f28bab45ab94eb490830df68466e, type: 3}
@@ -24925,7 +24925,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1857dae6c787f15448ff77a07d6ff4c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sensorLength: 20
+  sensorLength: 40
 --- !u!1 &1302534091
 GameObject:
   m_ObjectHideFlags: 0
@@ -26392,7 +26392,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  maximumFPS: 10
+  maximumFPS: 35
   keepRunningWhenEditorIsPaused: 1
   hideFromMainCamera: 1
 --- !u!81 &1399673873
@@ -26875,7 +26875,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1857dae6c787f15448ff77a07d6ff4c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sensorLength: 20
+  sensorLength: 40
 --- !u!1 &1440391732 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 193c4ffb9d60d2148874c308bbd283a0, type: 3}
@@ -27825,7 +27825,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1857dae6c787f15448ff77a07d6ff4c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sensorLength: 20
+  sensorLength: 40
 --- !u!1001 &1488896879
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -32858,7 +32858,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1857dae6c787f15448ff77a07d6ff4c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sensorLength: 20
+  sensorLength: 40
 --- !u!1001 &1742948948
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -41255,6 +41255,7 @@ GameObject:
   m_Component:
   - component: {fileID: 543450652355099729}
   - component: {fileID: 919132148351641324}
+  - component: {fileID: 919132148351641329}
   - component: {fileID: 919132148351641326}
   - component: {fileID: 919132148351641327}
   - component: {fileID: 919132148351641328}
@@ -41322,7 +41323,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 919132148351641323}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 552a3ab80294400eaa83147bcdaecb7f, type: 3}
   m_Name: 
@@ -41332,6 +41333,20 @@ MonoBehaviour:
   datasetFolderPath: H:\01_Kuliah\01_Dokumen\22 - Robotika\02 Tugas Unity\10 Persiapan
     UTS\UTS Ngerjain\dataset
   keyToToggleSaveDataset: p
+--- !u!114 &919132148351641329
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 919132148351641323}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 044a5629721485644a1a2544d6dbf48d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rigidbody: {fileID: 919132148351641324}
+  totalDistanceTraveled: 0
 --- !u!23 &938806992698495438
 MeshRenderer:
   m_ObjectHideFlags: 0

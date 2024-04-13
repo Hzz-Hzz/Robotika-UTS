@@ -126,7 +126,7 @@ public class InterprocessCommunicationRpc<E> where E: System.Enum
         return true;
     }
 
-    private void handleCallingFunction(int queryCode, long id, object[] parameters) {
+    private async Task handleCallingFunction(int queryCode, long id, object[] parameters) {
         if (!registeredMethods.ContainsKey(queryCode)) {
             raiseQueryCodeErrorToOtherParty(queryCode, id);
             return;
@@ -143,7 +143,10 @@ public class InterprocessCommunicationRpc<E> where E: System.Enum
                 return jtoken.ToObject(methodParamTypes[i]);
             }).ToArray();
 
-            var ret = method.DynamicInvoke(convertedParameters);
+            var dynamicInvokeTask = Task.Factory.StartNew(() => {
+                return method.DynamicInvoke(convertedParameters);
+            });
+            var ret = await dynamicInvokeTask;
             call<NoReturn>(queryCode, id, new object[]{ret});
         }
         catch (Exception e) when (e is TargetParameterCountException || e is ArgumentException || e is JsonSerializationException) {

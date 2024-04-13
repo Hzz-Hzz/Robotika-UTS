@@ -22,7 +22,7 @@ public class GpuCpuMat :
     IOutputArrayOfArrays,
     ISerializable
 {
-    public readonly static bool cudaAvailable = CudaInvoke.HasCuda;
+    public readonly static bool cudaAvailable = CudaInvoke.HasCuda && false;
     private bool gpuMatIsActive = false;
     public bool isGpu => gpuMatIsActive;
     private GpuMat? _gpuMat;

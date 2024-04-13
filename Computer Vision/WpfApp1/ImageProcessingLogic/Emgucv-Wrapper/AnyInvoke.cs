@@ -8,7 +8,7 @@ namespace WpfApp1.Emgucv_Wrapper;
 
 public static class AnyInvoke
 {
-    public readonly static bool cudaAvailable = GpuCpuMat.cudaAvailable;
+    public readonly static bool cudaAvailable = GpuCpuMat.cudaAvailable ;
 
     public static void Absdiff(GpuCpuMat input1, GpuCpuMat input2, GpuCpuMat outputMat, bool preferGpu=true) {
         if (preferGpu && cudaAvailable) {
