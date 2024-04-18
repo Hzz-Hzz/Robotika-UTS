@@ -31,7 +31,7 @@ namespace Actuators
         private Quaternion originalCameraRotationRelativeToParent;
         private Quaternion originalCircularUltrasonicRotationRelativeToParent;
         public GameObject camera;
-        public SteerDirectionManager cameraRotationManager = new SteerDirectionManager(35, 30, 4);
+        public SteerDirectionManager cameraRotationManager = new SteerDirectionManager(35, 30, 2);
         private float targetCarAngleBasedOnRecommendationAndCamRotation =>
             cameraRotationManager.getSteerAngle()*0.4f + angleRecommendation;
         private float targetCameraAngleBasedOnRecommendationAndCamRotation =>
@@ -55,7 +55,7 @@ namespace Actuators
             originalCircularUltrasonicRotationRelativeToParent = circularUltrasonic.transform.localRotation;
 
             _torqueManager = new ConstSpeedTorqueManager(_speedSensor, 350, 16, 50,
-                0.45f, 45);
+                0.5f, 50);
         }
 
 
@@ -93,9 +93,9 @@ namespace Actuators
         private void modifyMaxSpeedBasedOnSlope() {
             var slope = gyroscope.getSlope();
             if (slope >= EXTREME_SLOPE)
-                _torqueManager.maxSpeed = 8;
+                _torqueManager.maxSpeed = 10;
             else if (slope >= MEDIUM_SLOPE)
-                _torqueManager.maxSpeed = 8;
+                _torqueManager.maxSpeed = 10;
             else if (Time.time - lastTimeObstacleWasFound < 1)
                 _torqueManager.maxSpeed = 12;
             else _torqueManager.maxSpeed = 16;
