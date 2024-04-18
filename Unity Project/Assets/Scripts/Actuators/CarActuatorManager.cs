@@ -93,11 +93,11 @@ namespace Actuators
         private void modifyMaxSpeedBasedOnSlope() {
             var slope = gyroscope.getSlope();
             if (slope >= EXTREME_SLOPE)
-                _torqueManager.maxSpeed = 10;
-            else if (slope >= MEDIUM_SLOPE)
-                _torqueManager.maxSpeed = 10;
+                _torqueManager.maxSpeed = 13;
             else if (Time.time - lastTimeObstacleWasFound < 1)
                 _torqueManager.maxSpeed = 12;
+            else if (slope >= MEDIUM_SLOPE)
+                _torqueManager.maxSpeed = 13;
             else _torqueManager.maxSpeed = 16;
         }
 
